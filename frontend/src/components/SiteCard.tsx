@@ -9,6 +9,7 @@ import {
   sslColorClass,
   sslLabel,
 } from "../lib/siteFormat"
+import { stackCardStyle, stackColor, STACK_LABELS } from "../lib/stackFormat"
 import { Sparkline } from "./Sparkline"
 import { StatusBadge } from "./StatusBadge"
 
@@ -20,14 +21,20 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
     <Link
       to={`/sites/${site.id}`}
       className="block rounded-lg border border-border bg-surface p-4 transition hover:bg-surface-hover"
+      style={stackCardStyle(site.type)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          {site.client_name && (
-            <div className="truncate font-mono text-[10px] uppercase tracking-wide text-accent-dim">
-              {site.client_name}
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            {site.client_name && (
+              <span className="truncate font-mono text-[10px] uppercase tracking-wide text-accent-dim">
+                {site.client_name}
+              </span>
+            )}
+            <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide" style={{ color: stackColor(site.type) }}>
+              {site.client_name && "·"} {STACK_LABELS[site.type]}
+            </span>
+          </div>
           <div className="flex items-center gap-1.5">
             <span className="truncate font-medium text-ink">{site.name}</span>
             {site.monitoring_mode === "basic" && (

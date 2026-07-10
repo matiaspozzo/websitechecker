@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { api } from "../api/client"
-import type { DashboardResponse } from "../api/types"
+import type { DashboardResponse, SiteDashboardEntry, SiteType } from "../api/types"
 import { SiteCard } from "../components/SiteCard"
 import { SiteTable } from "../components/SiteTable"
+import { STACK_LABELS, STACK_ORDER, stackColor } from "../lib/stackFormat"
 
 type ViewMode = "card" | "list"
 
@@ -53,6 +54,16 @@ export function Dashboard() {
     if (!clientFilter) return data.sites
     return data.sites.filter((s) => (s.client_name || UNASSIGNED) === clientFilter)
   }, [data, clientFilter])
+
+  const groups = useMemo(() => {
+    const byType = new Map<SiteType, SiteDashboardEntry[]>()
+    for (const site of filteredSites) {
+      const list = byType.get(site.type) ?? []
+      list.push(site)
+      byType.set(site.type, list)
+    }
+    return STACK_ORDER.map((type) => ({ type, sites: byType.get(type) ?? [] })).filter((g) => g.sites.length > 0)
+  }, [filteredSites])
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -108,15 +119,28 @@ export function Dashboard() {
         <p className="font-mono text-sm text-ink-muted">No sites for this client.</p>
       )}
 
-      {filteredSites.length > 0 && viewMode === "card" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSites.map((site) => (
-            <SiteCard key={site.id} site={site} />
-          ))}
-        </div>
-      )}
+      {groups.map(({ type, sites }) => (
+        <section key={type} className="mb-6">
+          <h2
+            className="mb-2 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wide"
+            style={{ color: stackColor(type) }}
+          >
+            <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: stackColor(type) }} />
+            {STACK_LABELS[type]}
+            <span className="font-normal text-ink-muted">({sites.length})</span>
+          </h2>
 
-      {filteredSites.length > 0 && viewMode === "list" && <SiteTable sites={filteredSites} />}
+          {viewMode === "card" ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {sites.map((site) => (
+                <SiteCard key={site.id} site={site} />
+              ))}
+            </div>
+          ) : (
+            <SiteTable sites={sites} />
+          )}
+        </section>
+      ))}
     </div>
   )
 }

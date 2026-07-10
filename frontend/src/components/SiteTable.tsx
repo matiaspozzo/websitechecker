@@ -9,6 +9,7 @@ import {
   sslColorClass,
   sslLabel,
 } from "../lib/siteFormat"
+import { stackRowStyle, STACK_LABELS } from "../lib/stackFormat"
 import { StatusBadge } from "./StatusBadge"
 
 export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
@@ -40,7 +41,12 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
             const sslDays = daysUntil(site.next_ssl_expiry)
             const domainDays = daysUntil(site.next_domain_expiry)
             return (
-              <tr key={site.id} className="border-b border-border/60 last:border-b-0 hover:bg-surface-hover">
+              <tr
+                key={site.id}
+                className="border-b border-border/60 last:border-b-0 hover:bg-surface-hover"
+                style={stackRowStyle(site.type)}
+                title={STACK_LABELS[site.type]}
+              >
                 <td className="px-4 py-2">
                   <StatusBadge status={site.status} />
                 </td>
