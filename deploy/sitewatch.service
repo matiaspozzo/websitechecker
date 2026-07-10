@@ -1,0 +1,20 @@
+[Unit]
+Description=SiteWatch monitoring
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust these three paths for your install location and user.
+User=sitewatch
+WorkingDirectory=/opt/sitewatch
+EnvironmentFile=/opt/sitewatch/.env
+
+ExecStartPre=/opt/sitewatch/.venv/bin/alembic upgrade head
+ExecStart=/opt/sitewatch/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
