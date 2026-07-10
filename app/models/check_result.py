@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String
+from sqlalchemy import Enum, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
 from app.models.incident import CheckType
+from app.models.types import UTCDateTime
 
 
 class CheckResult(Base):
@@ -18,7 +19,7 @@ class CheckResult(Base):
     success: Mapped[bool]
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    timestamp: Mapped[datetime] = mapped_column(UTCDateTime, server_default=func.now())
     error_message: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
     site: Mapped["Site"] = relationship(back_populates="check_results")

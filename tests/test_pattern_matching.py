@@ -51,6 +51,13 @@ async def test_clean_page_has_no_false_positive(db, site):
     assert await _run_with_body(site, db, CLEAN_HTML) is True
 
 
+async def test_known_benign_iframe_is_not_flagged(db, site):
+    # Google Tag Manager, YouTube, Maps, etc. are extremely common on real
+    # sites and must not trigger a "possible compromise" incident on their own.
+    body = '<html><body>Welcome<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXX"></iframe></body></html>'
+    assert await _run_with_body(site, db, body) is True
+
+
 async def test_missing_keyword_flags_content_incident(db, site):
     assert await _run_with_body(site, db, "<html><body>nothing relevant here</body></html>") is False
 

@@ -1,11 +1,12 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, Text
+from sqlalchemy import JSON, Enum, ForeignKey, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
+from app.models.types import UTCDateTime
 
 
 class CheckType(str, enum.Enum):
@@ -33,11 +34,11 @@ class Incident(Base):
     site_id: Mapped[int] = mapped_column(ForeignKey("sites.id", ondelete="CASCADE"))
     check_type: Mapped[CheckType] = mapped_column(Enum(CheckType))
     severity: Mapped[Severity] = mapped_column(Enum(Severity))
-    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    opened_at: Mapped[datetime] = mapped_column(UTCDateTime, server_default=func.now())
+    closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
     cause: Mapped[str] = mapped_column(Text)
     detail_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    notified_open_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    notified_close_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notified_open_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    notified_close_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
 
     site: Mapped["Site"] = relationship(back_populates="incidents")
