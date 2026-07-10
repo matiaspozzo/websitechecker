@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import aiohttp
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -68,6 +68,8 @@ def create_app() -> FastAPI:
 
         @app.get("/{full_path:path}", include_in_schema=False)
         async def spa_fallback(full_path: str) -> FileResponse:
+            if full_path.startswith("api/"):
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
             candidate = STATIC_DIR / full_path
             if candidate.is_file():
                 return FileResponse(candidate)
