@@ -29,6 +29,7 @@ class SiteDashboardEntry(BaseModel):
     next_domain_expiry: datetime | None
     vulnerable_plugin_count: int
     outdated_plugin_count: int
+    core_update_available: str | None
     open_incident_count: int
 
 
