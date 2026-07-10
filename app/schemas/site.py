@@ -2,13 +2,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.site import SiteType
+from app.models.site import MonitoringMode, SiteType
 
 
 class SiteBase(BaseModel):
     name: str
     url: str
     type: SiteType
+    monitoring_mode: MonitoringMode = MonitoringMode.full
     check_interval_seconds: int = 300
     expected_keyword: str | None = None
     active: bool = True
@@ -31,6 +32,7 @@ class SiteUpdate(BaseModel):
     name: str | None = None
     url: str | None = None
     type: SiteType | None = None
+    monitoring_mode: MonitoringMode | None = None
     check_interval_seconds: int | None = None
     expected_keyword: str | None = None
     active: bool | None = None

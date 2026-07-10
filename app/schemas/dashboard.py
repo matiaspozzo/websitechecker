@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.models.site import SiteType
+from app.models.site import MonitoringMode, SiteType
 
 
 class SparklinePoint(BaseModel):
@@ -16,6 +16,7 @@ class SiteDashboardEntry(BaseModel):
     name: str
     url: str
     type: SiteType
+    monitoring_mode: MonitoringMode
     active: bool
     status: str  # "up" | "down" | "paused" | "unknown"
     uptime_24h_pct: float | None

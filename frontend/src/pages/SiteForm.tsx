@@ -1,12 +1,13 @@
 import { type FormEvent, useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { api, ApiError } from "../api/client"
-import type { Site, SiteInput, SiteType } from "../api/types"
+import type { MonitoringMode, Site, SiteInput, SiteType } from "../api/types"
 
 const EMPTY: SiteInput = {
   name: "",
   url: "",
   type: "wordpress",
+  monitoring_mode: "full",
   check_interval_seconds: 300,
   expected_keyword: "",
   active: true,
@@ -119,14 +120,28 @@ export function SiteForm() {
         </div>
 
         <div>
-          <label className={labelClass()}>Expected keyword</label>
-          <input
+          <label className={labelClass()}>Monitoring</label>
+          <select
             className={inputClass()}
-            value={form.expected_keyword ?? ""}
-            onChange={(e) => set("expected_keyword", e.target.value)}
-            placeholder="text expected in the page HTML"
-          />
+            value={form.monitoring_mode}
+            onChange={(e) => set("monitoring_mode", e.target.value as MonitoringMode)}
+          >
+            <option value="full">Full (uptime, content, SSL/domain, {form.type === "wordpress" ? "WP inventory" : "deps audit"}, blacklist)</option>
+            <option value="basic">Basic (uptime + SSL/domain expiry only)</option>
+          </select>
         </div>
+
+        {form.monitoring_mode === "full" && (
+          <div>
+            <label className={labelClass()}>Expected keyword</label>
+            <input
+              className={inputClass()}
+              value={form.expected_keyword ?? ""}
+              onChange={(e) => set("expected_keyword", e.target.value)}
+              placeholder="text expected in the page HTML"
+            />
+          </div>
+        )}
 
         <label className="flex items-center gap-2 font-mono text-sm text-ink">
           <input
@@ -137,7 +152,7 @@ export function SiteForm() {
           active
         </label>
 
-        {form.type === "wordpress" && (
+        {form.monitoring_mode === "full" && form.type === "wordpress" && (
           <div>
             <label className={labelClass()}>mu-plugin token</label>
             <input
@@ -149,7 +164,7 @@ export function SiteForm() {
           </div>
         )}
 
-        {form.type !== "wordpress" && (
+        {form.monitoring_mode === "full" && form.type !== "wordpress" && (
           <>
             <div>
               <label className={labelClass()}>Health endpoint URL (optional)</label>

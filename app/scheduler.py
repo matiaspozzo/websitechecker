@@ -8,14 +8,14 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import SessionLocal
 from app.models.config import GlobalConfig
-from app.models.site import Site, SiteType
+from app.models.site import Site
 
 logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler(timezone=settings.tz)
 
 # Checks that run on the site's own configured interval (fast, frequent).
-INTERVAL_CHECK_TYPES = ["uptime", "content"]
+INTERVAL_CHECK_TYPES = {"uptime", "content"}
 
 # Checks that run once/day, staggered per-site to avoid a thundering herd.
 DAILY_CHECK_TYPES = {
@@ -31,15 +31,6 @@ DIGEST_JOB_ID = "digest"
 
 def _job_id(site_id: int, check_type: str) -> str:
     return f"site:{site_id}:{check_type}"
-
-
-def _daily_check_types_for_site(site: Site) -> list[str]:
-    types = ["ssl_domain", "blacklist"]
-    if site.type == SiteType.wordpress:
-        types.append("wp")
-    else:
-        types.append("deps")
-    return types
 
 
 async def _run_job(site_id: int, check_type: str) -> None:
@@ -81,7 +72,13 @@ def add_site_jobs(site: Site) -> None:
     if not site.active:
         return
 
-    for check_type in INTERVAL_CHECK_TYPES:
+    from app.checks.registry import applicable_check_types, load_all_checkers
+
+    load_all_checkers()
+    applicable = set(applicable_check_types(site))
+    stagger_minute = site.id % 60
+
+    for check_type in applicable & INTERVAL_CHECK_TYPES:
         scheduler.add_job(
             _run_job,
             trigger=IntervalTrigger(seconds=site.check_interval_seconds),
@@ -92,8 +89,7 @@ def add_site_jobs(site: Site) -> None:
             coalesce=True,
         )
 
-    stagger_minute = site.id % 60
-    for check_type in _daily_check_types_for_site(site):
+    for check_type in applicable & DAILY_CHECK_TYPES.keys():
         base_hour = DAILY_CHECK_TYPES[check_type]
         scheduler.add_job(
             _run_job,

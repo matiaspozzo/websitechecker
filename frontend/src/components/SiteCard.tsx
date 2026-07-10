@@ -1,42 +1,16 @@
 import { Link } from "react-router-dom"
 import type { SiteDashboardEntry } from "../api/types"
+import {
+  daysUntil,
+  domainColorClass,
+  formatCertDays,
+  formatLatency,
+  formatPct,
+  sslColorClass,
+  sslLabel,
+} from "../lib/siteFormat"
 import { Sparkline } from "./Sparkline"
 import { StatusBadge } from "./StatusBadge"
-
-function formatPct(pct: number | null): string {
-  return pct === null ? "—" : `${pct.toFixed(1)}%`
-}
-
-function formatLatency(ms: number | null): string {
-  return ms === null ? "—" : `${Math.round(ms)}ms`
-}
-
-function daysUntil(iso: string | null): number | null {
-  if (!iso) return null
-  return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-}
-
-function formatCertDays(days: number | null): string {
-  if (days === null) return "—"
-  return days < 0 ? `expired ${-days}d ago` : `${days}d`
-}
-
-function sslLabel(sslValid: boolean | null, days: number | null): string {
-  if (sslValid === null) return "SSL —"
-  if (sslValid === false) return `SSL invalid (${formatCertDays(days)})`
-  return `SSL ${formatCertDays(days)}`
-}
-
-function sslColorClass(sslValid: boolean | null, days: number | null): string {
-  if (sslValid === false) return "text-status-critical"
-  if (days !== null && days <= 14) return "text-status-warning"
-  return "text-ink-muted"
-}
-
-function domainColorClass(days: number | null): string {
-  if (days !== null && days <= 30) return "text-status-warning"
-  return "text-ink-muted"
-}
 
 export function SiteCard({ site }: { site: SiteDashboardEntry }) {
   const sslDays = daysUntil(site.next_ssl_expiry)
@@ -49,7 +23,14 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate font-medium text-ink">{site.name}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="truncate font-medium text-ink">{site.name}</span>
+            {site.monitoring_mode === "basic" && (
+              <span className="shrink-0 rounded border border-border px-1 py-0.5 font-mono text-[10px] uppercase text-ink-muted">
+                basic
+              </span>
+            )}
+          </div>
           <div className="truncate font-mono text-xs text-ink-muted">{site.url}</div>
         </div>
         <StatusBadge status={site.status} />

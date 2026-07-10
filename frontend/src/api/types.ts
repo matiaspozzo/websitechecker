@@ -1,10 +1,12 @@
 export type SiteType = "wordpress" | "laravel" | "nextjs"
+export type MonitoringMode = "full" | "basic"
 
 export interface Site {
   id: number
   name: string
   url: string
   type: SiteType
+  monitoring_mode: MonitoringMode
   check_interval_seconds: number
   expected_keyword: string | null
   active: boolean
@@ -62,6 +64,7 @@ export interface SiteDashboardEntry {
   name: string
   url: string
   type: SiteType
+  monitoring_mode: MonitoringMode
   active: boolean
   status: SiteStatus
   uptime_24h_pct: number | null

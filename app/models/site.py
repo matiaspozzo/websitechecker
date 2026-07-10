@@ -15,6 +15,11 @@ class SiteType(str, enum.Enum):
     nextjs = "nextjs"
 
 
+class MonitoringMode(str, enum.Enum):
+    full = "full"  # all checks applicable to the site's type
+    basic = "basic"  # uptime + SSL/domain expiry only, nothing else
+
+
 class Site(Base):
     __tablename__ = "sites"
 
@@ -23,6 +28,9 @@ class Site(Base):
     url: Mapped[str] = mapped_column(String(1024))
     expected_domain: Mapped[str] = mapped_column(String(255))
     type: Mapped[SiteType] = mapped_column(Enum(SiteType))
+    monitoring_mode: Mapped[MonitoringMode] = mapped_column(
+        Enum(MonitoringMode), default=MonitoringMode.full, server_default=MonitoringMode.full.value
+    )
     check_interval_seconds: Mapped[int] = mapped_column(Integer, default=300)
     expected_keyword: Mapped[str | None] = mapped_column(String(255), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=True)

@@ -3,7 +3,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app import scheduler
-from app.models.site import Site, SiteType
+from app.models.site import MonitoringMode, Site, SiteType
 
 
 @pytest.fixture(autouse=True)
@@ -95,3 +95,25 @@ def test_wordpress_site_gets_wp_job_not_deps(db):
 
     assert scheduler.scheduler.get_job(f"site:{site.id}:wp") is not None
     assert scheduler.scheduler.get_job(f"site:{site.id}:deps") is None
+
+
+def test_basic_monitoring_mode_only_gets_uptime_and_ssl_jobs(db):
+    site = Site(
+        name="Lightweight",
+        url="https://example.com",
+        expected_domain="example.com",
+        type=SiteType.wordpress,
+        monitoring_mode=MonitoringMode.basic,
+    )
+    db.add(site)
+    db.commit()
+    db.refresh(site)
+
+    scheduler.add_site_jobs(site)
+
+    assert scheduler.scheduler.get_job(f"site:{site.id}:uptime") is not None
+    assert scheduler.scheduler.get_job(f"site:{site.id}:ssl_domain") is not None
+    # everything else -- content, wp, blacklist -- must not be scheduled
+    assert scheduler.scheduler.get_job(f"site:{site.id}:content") is None
+    assert scheduler.scheduler.get_job(f"site:{site.id}:wp") is None
+    assert scheduler.scheduler.get_job(f"site:{site.id}:blacklist") is None

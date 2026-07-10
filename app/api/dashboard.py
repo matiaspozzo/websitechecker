@@ -77,6 +77,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                 name=site.name,
                 url=site.url,
                 type=site.type,
+                monitoring_mode=site.monitoring_mode,
                 active=site.active,
                 status=current_status,
                 uptime_24h_pct=uptime_24h,

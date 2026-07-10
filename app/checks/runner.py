@@ -31,12 +31,12 @@ async def get_http_session() -> aiohttp.ClientSession:
 
 
 async def run_all_checks_for_site(site: Site, db: Session) -> None:
-    """Run every check applicable to this site's type, one after another. A failing
-    check must not prevent the others from running."""
-    from app.checks.registry import check_types_for_site_type
+    """Run every check applicable to this site (its type and monitoring mode),
+    one after another. A failing check must not prevent the others from running."""
+    from app.checks.registry import applicable_check_types
 
     load_all_checkers()
-    for check_type in check_types_for_site_type(site.type):
+    for check_type in applicable_check_types(site):
         try:
             await run_check_for_site(site, check_type, db)
         except Exception:
