@@ -99,6 +99,9 @@ export interface GlobalConfig {
   gsb_api_key: string | null
   vt_api_key: string | null
   healthchecks_url: string | null
+  wpscan_daily_limit: number
+  wpscan_requests_today: number
+  wpscan_requests_date: string | null
 }
 
 export interface SuspiciousPattern {

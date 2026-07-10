@@ -20,3 +20,10 @@ class GlobalConfig(Base):
     gsb_api_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     vt_api_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     healthchecks_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    # Persisted (survives restarts) daily budget for WPScan API calls -- the
+    # free tier caps at 25 req/day. wpscan_requests_date is an ISO date string;
+    # the counter resets whenever it no longer matches today's date.
+    wpscan_daily_limit: Mapped[int] = mapped_column(Integer, default=25, server_default="25")
+    wpscan_requests_today: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    wpscan_requests_date: Mapped[str | None] = mapped_column(String(10), nullable=True)

@@ -17,6 +17,9 @@ class GlobalConfigOut(BaseModel):
     gsb_api_key: str | None
     vt_api_key: str | None
     healthchecks_url: str | None
+    wpscan_daily_limit: int
+    wpscan_requests_today: int
+    wpscan_requests_date: str | None
 
 
 class GlobalConfigUpdate(BaseModel):
@@ -30,6 +33,7 @@ class GlobalConfigUpdate(BaseModel):
     gsb_api_key: str | None = None
     vt_api_key: str | None = None
     healthchecks_url: str | None = None
+    wpscan_daily_limit: int | None = None
 
 
 class SuspiciousPatternBase(BaseModel):

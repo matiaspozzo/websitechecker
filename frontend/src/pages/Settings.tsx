@@ -151,7 +151,38 @@ export function Settings() {
         <div>
           <label className={labelClass()}>WPScan API key</label>
           <input className={inputClass()} value={config.wpscan_api_key ?? ""} onChange={(e) => set("wpscan_api_key", e.target.value)} />
+          <p className="mt-1 font-mono text-[11px] text-ink-muted">
+            leave blank to use the key from .env instead — either way, usage below reflects whichever is active
+          </p>
         </div>
+        {(config.wpscan_api_key || config.wpscan_requests_date) && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass()}>WPScan daily request limit</label>
+              <input
+                type="number"
+                min={0}
+                className={inputClass()}
+                value={config.wpscan_daily_limit}
+                onChange={(e) => set("wpscan_daily_limit", Number(e.target.value))}
+              />
+              <p className="mt-1 font-mono text-[11px] text-ink-muted">free tier: 25/day</p>
+            </div>
+            <div>
+              <label className={labelClass()}>Used today{config.wpscan_requests_date ? ` (${config.wpscan_requests_date})` : ""}</label>
+              <p
+                className={`px-3 py-2 font-mono text-sm ${
+                  config.wpscan_requests_today >= config.wpscan_daily_limit ? "text-status-critical" : "text-ink"
+                }`}
+              >
+                {config.wpscan_requests_today} / {config.wpscan_daily_limit}
+              </p>
+              <p className="mt-1 font-mono text-[11px] text-ink-muted">
+                lookups beyond the limit are deferred to the next day, not dropped
+              </p>
+            </div>
+          </div>
+        )}
         <div>
           <label className={labelClass()}>Google Safe Browsing API key</label>
           <input className={inputClass()} value={config.gsb_api_key ?? ""} onChange={(e) => set("gsb_api_key", e.target.value)} />

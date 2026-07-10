@@ -98,7 +98,7 @@ class WordPressChecker:
             available = plugin.get("available")
             if not available or available == plugin.get("installed"):
                 continue
-            vulns = await wpscan_client.get_plugin_vulnerabilities(http, plugin.get("slug", ""))
+            vulns = await wpscan_client.get_plugin_vulnerabilities(db, http, plugin.get("slug", ""))
             if vulns:
                 titles = [v.get("title", "unknown vulnerability") for v in vulns]
                 await incident_manager.open_incident(
@@ -117,7 +117,7 @@ class WordPressChecker:
             available = theme.get("available")
             if not available or available == theme.get("installed"):
                 continue
-            vulns = await wpscan_client.get_theme_vulnerabilities(http, theme.get("slug", ""))
+            vulns = await wpscan_client.get_theme_vulnerabilities(db, http, theme.get("slug", ""))
             if vulns:
                 titles = [v.get("title", "unknown vulnerability") for v in vulns]
                 await incident_manager.open_incident(
@@ -133,7 +133,7 @@ class WordPressChecker:
                 )
 
         if report.get("core_update_available") and snapshot.core_version:
-            core_vulns = await wpscan_client.get_core_vulnerabilities(http, snapshot.core_version)
+            core_vulns = await wpscan_client.get_core_vulnerabilities(db, http, snapshot.core_version)
             if core_vulns:
                 titles = [v.get("title", "unknown vulnerability") for v in core_vulns]
                 await incident_manager.open_incident(
