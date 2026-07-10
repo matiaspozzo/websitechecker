@@ -4,7 +4,7 @@
  * Description: Token-protected REST endpoint reporting WordPress core/plugin/theme
  *              versions, PHP version, and admin usernames, for the SiteWatch
  *              monitoring system to poll once a day.
- * Version: 1.1.0
+ * Version: 1.2.0
  */
 
 if (!defined('ABSPATH')) {
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 // back from the response and shows an "outdated mu-plugin" badge on any site
 // still running an older copy of this file, so you can tell which sites still
 // need the updated file uploaded without having to track it by hand.
-define('SITEWATCH_MU_PLUGIN_VERSION', '1.1.0');
+define('SITEWATCH_MU_PLUGIN_VERSION', '1.2.0');
 
 add_action('rest_api_init', function () {
     register_rest_route('sitewatch/v1', '/report', [
@@ -47,6 +47,19 @@ function sitewatch_check_token(WP_REST_Request $request) {
 }
 
 function sitewatch_report_handler(WP_REST_Request $request) {
+    // Page-cache plugins (LiteSpeed Cache confirmed serving this exact endpoint
+    // from cache in the wild) don't automatically know a REST API route should
+    // never be cached -- without opting out explicitly, they'll happily cache
+    // this response and keep serving stale plugin/theme/core version data long
+    // after the real state (and even after this file itself) has changed. Opt
+    // out as early and as broadly as possible; each of these is a no-op on a
+    // site that isn't running the plugin it targets.
+    if (!defined('DONOTCACHEPAGE')) {
+        define('DONOTCACHEPAGE', true);
+    }
+    nocache_headers();
+    do_action('litespeed_control_set_nocache', 'SiteWatch report must always be live');
+
     if (!function_exists('get_plugins')) {
         require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
@@ -124,7 +137,7 @@ function sitewatch_report_handler(WP_REST_Request $request) {
     $admins = get_users(['role' => 'administrator', 'fields' => ['user_login']]);
     $admin_usernames = array_map(fn($u) => $u->user_login, $admins);
 
-    return new WP_REST_Response([
+    $response = new WP_REST_Response([
         'mu_plugin_version' => SITEWATCH_MU_PLUGIN_VERSION,
         'core_version' => $core_version,
         'core_update_available' => $core_update_available,
@@ -133,4 +146,6 @@ function sitewatch_report_handler(WP_REST_Request $request) {
         'themes' => $themes,
         'admin_usernames' => $admin_usernames,
     ], 200);
+    $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    return $response;
 }

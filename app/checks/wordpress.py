@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Sites reporting an older (or missing) version get an "outdated mu-plugin" flag
 # on the dashboard, so it's visible which sites still need the file re-uploaded
 # after a change like the one that added this version reporting.
-CURRENT_MU_PLUGIN_VERSION = "1.1.0"
+CURRENT_MU_PLUGIN_VERSION = "1.2.0"
 
 
 class WordPressChecker:
