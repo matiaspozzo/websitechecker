@@ -48,8 +48,12 @@ class WordPressChecker:
 
         url = site.url.rstrip("/") + "/wp-json/sitewatch/v1/report"
         try:
+            # The mu-plugin forces a fresh wp_version_check()/wp_update_plugins()/
+            # wp_update_themes() before responding (see agents/wp-mu-plugin), which
+            # means it makes its own outbound calls to WordPress.org -- give it more
+            # room than a plain page load.
             async with http.get(
-                url, headers={"X-SiteWatch-Token": site.mu_plugin_token}, timeout=aiohttp.ClientTimeout(total=15)
+                url, headers={"X-SiteWatch-Token": site.mu_plugin_token}, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
                     reason = await self._describe_error(resp)

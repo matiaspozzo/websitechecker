@@ -48,6 +48,18 @@ function sitewatch_report_handler(WP_REST_Request $request) {
         require_once ABSPATH . 'wp-admin/includes/update.php';
     }
 
+    // Force a fresh update check instead of trusting whatever's already in the
+    // update_plugins/update_themes/update_core transients. Those are normally
+    // only populated by wp-cron (twice daily) -- on a site where wp-cron isn't
+    // running reliably (very common: depends on real traffic or a working
+    // server cron entry), the transients just sit empty and every "available"
+    // field below would silently report null even when real updates exist.
+    // This adds a couple of outbound requests to WordPress.org, so it's only
+    // worth it because SiteWatch polls this endpoint once a day, not per-minute.
+    wp_version_check();
+    wp_update_plugins();
+    wp_update_themes();
+
     // --- Core ---
     $core_version = get_bloginfo('version');
     $core_update_available = null;
