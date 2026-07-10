@@ -34,7 +34,11 @@ export function Login() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-lg border border-border bg-surface p-6"
       >
-        <h1 className="mb-6 font-mono text-lg font-semibold text-accent">SiteWatch</h1>
+        <div className="mb-6 flex items-center gap-2">
+          <img src="/wirall-logo.png" alt="Wirall Interactive" className="h-6 w-auto" />
+          <span className="h-5 w-px bg-border" aria-hidden />
+          <h1 className="font-mono text-lg font-semibold text-accent">SiteWatch</h1>
+        </div>
 
         <label className="mb-3 block">
           <span className="mb-1 block font-mono text-xs uppercase tracking-wide text-ink-muted">

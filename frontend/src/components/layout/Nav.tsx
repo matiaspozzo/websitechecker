@@ -12,7 +12,11 @@ export function Nav() {
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-1">
-          <span className="mr-3 font-mono text-sm font-semibold text-accent">SiteWatch</span>
+          <div className="mr-3 flex items-center gap-2">
+            <img src="/wirall-logo.png" alt="Wirall Interactive" className="h-5 w-auto" />
+            <span className="h-4 w-px bg-border" aria-hidden />
+            <span className="font-mono text-sm font-semibold text-accent">SiteWatch</span>
+          </div>
           <NavLink to="/" end className={({ isActive }) => `${LINK_CLASS} ${isActive ? ACTIVE_CLASS : ""}`}>
             Dashboard
           </NavLink>
