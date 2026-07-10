@@ -142,10 +142,14 @@ export function SiteDetail() {
               </p>
               <p className="mb-2 font-mono text-xs">
                 <span className="text-ink-muted">mu-plugin: {wpInventory.snapshot.mu_plugin_version ?? "unknown (pre-1.1.0)"}</span>
-                {wpInventory.snapshot.mu_plugin_outdated && (
+                {wpInventory.snapshot.mu_plugin_outdated ? (
                   <span className="ml-2 text-status-warning">
                     outdated — re-upload sitewatch-report.php to this site
                   </span>
+                ) : (
+                  wpInventory.snapshot.mu_plugin_version && (
+                    <span className="ml-2 text-status-up">up to date</span>
+                  )
                 )}
               </p>
               <table className="w-full font-mono text-xs">
