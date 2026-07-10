@@ -136,7 +136,11 @@ export function SiteDetail() {
             <>
               <p className="mb-1 font-mono text-xs text-ink-muted">
                 core {wpInventory.snapshot.core_version}
-                {wpInventory.snapshot.core_update_available && ` → ${wpInventory.snapshot.core_update_available} available`}
+                {wpInventory.snapshot.core_update_available ? (
+                  <span className="text-status-warning"> → {wpInventory.snapshot.core_update_available} available</span>
+                ) : (
+                  <span className="text-status-up"> (up to date)</span>
+                )}
                 {" · PHP "}
                 {wpInventory.snapshot.php_version}
               </p>

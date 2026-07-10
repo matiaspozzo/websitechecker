@@ -33,6 +33,7 @@ class SiteDashboardEntry(BaseModel):
     core_update_available: str | None
     mu_plugin_version: str | None
     mu_plugin_outdated: bool
+    has_wp_snapshot: bool
     open_incident_count: int
 
 

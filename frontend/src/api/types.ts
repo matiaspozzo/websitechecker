@@ -82,6 +82,7 @@ export interface SiteDashboardEntry {
   core_update_available: string | null
   mu_plugin_version: string | null
   mu_plugin_outdated: boolean
+  has_wp_snapshot: boolean
   open_incident_count: number
 }
 

@@ -64,7 +64,8 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
         site.outdated_plugin_count > 0 ||
         site.open_incident_count > 0 ||
         site.mu_plugin_outdated ||
-        site.mu_plugin_version) && (
+        site.mu_plugin_version ||
+        site.has_wp_snapshot) && (
         <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px]">
           {site.mu_plugin_outdated ? (
             <span
@@ -83,20 +84,32 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
               </span>
             )
           )}
-          {site.core_update_available && (
+          {site.core_update_available ? (
             <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
               core update: {site.core_update_available}
             </span>
+          ) : (
+            site.has_wp_snapshot && (
+              <span className="rounded border border-status-up/40 px-1.5 py-0.5 text-status-up">core up to date</span>
+            )
           )}
-          {site.vulnerable_plugin_count > 0 && (
+          {site.vulnerable_plugin_count > 0 ? (
             <span className="rounded border border-status-critical/40 px-1.5 py-0.5 text-status-critical">
               {site.vulnerable_plugin_count} vuln plugin{site.vulnerable_plugin_count > 1 ? "s" : ""}
             </span>
+          ) : (
+            site.has_wp_snapshot && (
+              <span className="rounded border border-status-up/40 px-1.5 py-0.5 text-status-up">no known vulnerabilities</span>
+            )
           )}
-          {site.outdated_plugin_count > 0 && (
+          {site.outdated_plugin_count > 0 ? (
             <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
               {site.outdated_plugin_count} plugin{site.outdated_plugin_count > 1 ? "s" : ""} to update
             </span>
+          ) : (
+            site.has_wp_snapshot && (
+              <span className="rounded border border-status-up/40 px-1.5 py-0.5 text-status-up">plugins up to date</span>
+            )
           )}
           {site.open_incident_count > 0 && (
             <span className="rounded border border-status-down/40 px-1.5 py-0.5 text-status-down">

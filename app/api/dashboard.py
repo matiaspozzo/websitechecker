@@ -77,6 +77,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
         core_update_available = None
         mu_plugin_version = None
         mu_plugin_outdated = False
+        has_wp_snapshot = False
         if site.type == SiteType.wordpress:
             wp_snapshot = (
                 db.query(WpSnapshot)
@@ -85,6 +86,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                 .first()
             )
             if wp_snapshot:
+                has_wp_snapshot = True
                 outdated_plugin_count = sum(
                     1
                     for plugin in wp_snapshot.plugins_json
@@ -118,6 +120,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                 core_update_available=core_update_available,
                 mu_plugin_version=mu_plugin_version,
                 mu_plugin_outdated=mu_plugin_outdated,
+                has_wp_snapshot=has_wp_snapshot,
                 open_incident_count=open_incidents,
             )
         )

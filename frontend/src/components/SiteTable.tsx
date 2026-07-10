@@ -83,6 +83,8 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                 <td className="px-2 py-2">
                   {site.vulnerable_plugin_count > 0 ? (
                     <span className="text-status-critical">{site.vulnerable_plugin_count}</span>
+                  ) : site.has_wp_snapshot ? (
+                    <span className="text-status-up">✓</span>
                   ) : (
                     <span className="text-ink-muted">—</span>
                   )}
@@ -90,6 +92,8 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                 <td className="px-2 py-2">
                   {site.outdated_plugin_count > 0 ? (
                     <span className="text-status-warning">{site.outdated_plugin_count}</span>
+                  ) : site.has_wp_snapshot ? (
+                    <span className="text-status-up">✓</span>
                   ) : (
                     <span className="text-ink-muted">—</span>
                   )}
@@ -97,6 +101,8 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                 <td className="px-2 py-2">
                   {site.core_update_available ? (
                     <span className="text-status-warning">{site.core_update_available}</span>
+                  ) : site.has_wp_snapshot ? (
+                    <span className="text-status-up">✓</span>
                   ) : (
                     <span className="text-ink-muted">—</span>
                   )}
