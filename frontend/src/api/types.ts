@@ -108,6 +108,13 @@ export interface SuspiciousPattern {
   severity: Severity
 }
 
+export interface TrustedDomain {
+  id: number
+  domain: string
+  description: string | null
+  enabled: boolean
+}
+
 export interface WpInventory {
   snapshot: {
     timestamp: string

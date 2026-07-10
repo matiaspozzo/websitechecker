@@ -7,6 +7,7 @@ from app.checks.fetch import FetchResult
 from app.models.incident import CheckType
 from app.models.site import Site, SiteType
 from app.models.suspicious_pattern import SuspiciousPattern
+from app.models.trusted_domain import TrustedDomain
 
 CLEAN_HTML = "<html><body><h1>Welcome to Example</h1></body></html>"
 EVAL_ATOB_HTML = "<script>eval(atob('ZG9jdW1lbnQ='))</script>"
@@ -32,6 +33,7 @@ def site(db):
 @pytest.fixture(autouse=True)
 def _seed_patterns(db):
     db.add(SuspiciousPattern(pattern="eval(atob(", is_regex=False, enabled=True))
+    db.add(TrustedDomain(domain="googletagmanager.com", enabled=True))
     db.commit()
 
 
@@ -56,6 +58,22 @@ async def test_known_benign_iframe_is_not_flagged(db, site):
     # sites and must not trigger a "possible compromise" incident on their own.
     body = '<html><body>Welcome<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-XXXX"></iframe></body></html>'
     assert await _run_with_body(site, db, body) is True
+
+
+async def test_custom_trusted_domain_suppresses_iframe_flag(db, site):
+    # A domain not in the seed defaults (e.g. a 360-tour host or a client's
+    # own secondary domain) can be added from the panel to stop it being flagged.
+    db.add(TrustedDomain(domain="kuula.co", description="360 tour embeds", enabled=True))
+    db.commit()
+    body = '<html><body>Welcome<iframe src="https://kuula.co/share/abc123"></iframe></body></html>'
+    assert await _run_with_body(site, db, body) is True
+
+
+async def test_disabled_trusted_domain_is_still_flagged(db, site):
+    db.add(TrustedDomain(domain="kuula.co", enabled=False))
+    db.commit()
+    body = '<html><body>Welcome<iframe src="https://kuula.co/share/abc123"></iframe></body></html>'
+    assert await _run_with_body(site, db, body) is False
 
 
 async def test_missing_keyword_flags_content_incident(db, site):

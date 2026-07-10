@@ -56,3 +56,25 @@ class SuspiciousPatternOut(SuspiciousPatternBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+
+
+class TrustedDomainBase(BaseModel):
+    domain: str
+    description: str | None = None
+    enabled: bool = True
+
+
+class TrustedDomainCreate(TrustedDomainBase):
+    pass
+
+
+class TrustedDomainUpdate(BaseModel):
+    domain: str | None = None
+    description: str | None = None
+    enabled: bool | None = None
+
+
+class TrustedDomainOut(TrustedDomainBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int

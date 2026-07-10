@@ -7,6 +7,7 @@ from app.models.silence import Silence
 from app.models.site import Site
 from app.models.ssl_domain_status import SslDomainStatus
 from app.models.suspicious_pattern import SuspiciousPattern
+from app.models.trusted_domain import TrustedDomain
 from app.models.user import User
 from app.models.wp_snapshot import WpSnapshot
 
@@ -20,6 +21,7 @@ __all__ = [
     "Site",
     "SslDomainStatus",
     "SuspiciousPattern",
+    "TrustedDomain",
     "User",
     "WpSnapshot",
 ]

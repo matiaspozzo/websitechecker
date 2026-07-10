@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "../api/client"
-import type { GlobalConfig, SuspiciousPattern } from "../api/types"
+import type { GlobalConfig, SuspiciousPattern, TrustedDomain } from "../api/types"
 
 function inputClass() {
   return "w-full rounded border border-border bg-bg px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent"
@@ -13,12 +13,15 @@ function labelClass() {
 export function Settings() {
   const [config, setConfig] = useState<GlobalConfig | null>(null)
   const [patterns, setPatterns] = useState<SuspiciousPattern[]>([])
+  const [trustedDomains, setTrustedDomains] = useState<TrustedDomain[]>([])
   const [saved, setSaved] = useState(false)
   const [newPattern, setNewPattern] = useState("")
+  const [newDomain, setNewDomain] = useState("")
 
   function load() {
     api.get<GlobalConfig>("/config").then(setConfig)
     api.get<SuspiciousPattern[]>("/config/patterns").then(setPatterns)
+    api.get<TrustedDomain[]>("/config/trusted-domains").then(setTrustedDomains)
   }
 
   useEffect(load, [])
@@ -48,6 +51,23 @@ export function Settings() {
     if (!newPattern.trim()) return
     await api.post("/config/patterns", { pattern: newPattern, is_regex: false, enabled: true, severity: "critical" })
     setNewPattern("")
+    load()
+  }
+
+  async function toggleTrustedDomain(domain: TrustedDomain) {
+    await api.put(`/config/trusted-domains/${domain.id}`, { enabled: !domain.enabled })
+    load()
+  }
+
+  async function deleteTrustedDomain(id: number) {
+    await api.delete(`/config/trusted-domains/${id}`)
+    load()
+  }
+
+  async function addTrustedDomain() {
+    if (!newDomain.trim()) return
+    await api.post("/config/trusted-domains", { domain: newDomain.trim(), enabled: true })
+    setNewDomain("")
     load()
   }
 
@@ -181,6 +201,44 @@ export function Settings() {
             onChange={(e) => setNewPattern(e.target.value)}
           />
           <button onClick={addPattern} className="shrink-0 rounded bg-accent px-3 py-2 font-mono text-sm font-medium text-bg">
+            add
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border bg-surface p-4 space-y-3">
+        <h2 className="font-mono text-sm font-medium text-ink">Trusted embed domains</h2>
+        <p className="font-mono text-xs text-ink-muted">
+          Iframes and meta-refreshes pointing to these domains are never flagged as a possible
+          compromise. If a legitimate embed on one of your sites gets flagged, add its domain here
+          — the open incident will close itself on the next check.
+        </p>
+        <ul className="space-y-2">
+          {trustedDomains.map((d) => (
+            <li key={d.id} className="flex items-center justify-between gap-3 font-mono text-xs">
+              <span className={`truncate ${d.enabled ? "text-ink" : "text-ink-muted line-through"}`}>
+                {d.domain}
+                {d.description && <span className="text-ink-muted"> — {d.description}</span>}
+              </span>
+              <div className="flex shrink-0 gap-2">
+                <button onClick={() => toggleTrustedDomain(d)} className="rounded border border-border px-2 py-1 text-ink-muted">
+                  {d.enabled ? "disable" : "enable"}
+                </button>
+                <button onClick={() => deleteTrustedDomain(d.id)} className="rounded border border-status-critical/40 px-2 py-1 text-status-critical">
+                  delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="flex gap-2">
+          <input
+            className={inputClass()}
+            placeholder="domain (e.g. kuula.co)"
+            value={newDomain}
+            onChange={(e) => setNewDomain(e.target.value)}
+          />
+          <button onClick={addTrustedDomain} className="shrink-0 rounded bg-accent px-3 py-2 font-mono text-sm font-medium text-bg">
             add
           </button>
         </div>

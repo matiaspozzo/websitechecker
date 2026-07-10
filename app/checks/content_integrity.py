@@ -12,6 +12,7 @@ from app.checks.registry import register
 from app.models.incident import CheckType, Severity
 from app.models.site import Site
 from app.models.suspicious_pattern import SuspiciousPattern
+from app.models.trusted_domain import TrustedDomain
 
 logger = logging.getLogger(__name__)
 
@@ -20,41 +21,11 @@ META_REFRESH_RE = re.compile(
     r'<meta[^>]+http-equiv=["\']refresh["\'][^>]*content=["\'][^"\']*url=([^"\';]+)', re.IGNORECASE
 )
 
-# Iframes to these domains are extremely common on legitimate sites (analytics,
-# video, maps, payments, spam/bot protection) and must not trigger a "possible
-# compromise" incident on their own -- an unqualified "any cross-domain iframe"
-# check would fire on nearly every real WordPress/Laravel/Next.js site. This is
-# a fixed allowlist rather than a panel-editable one (unlike SuspiciousPattern);
-# add to it here if a legitimate embed a site uses gets flagged.
-KNOWN_BENIGN_IFRAME_DOMAINS = {
-    "googletagmanager.com",
-    "google.com",
-    "google.com.ar",  # ...and other country-code Google domains sites commonly embed from
-    "youtube.com",
-    "youtube-nocookie.com",
-    "vimeo.com",
-    "player.vimeo.com",
-    "google.com/maps",
-    "maps.google.com",
-    "www.google.com/recaptcha",
-    "recaptcha.google.com",
-    "js.stripe.com",
-    "paypal.com",
-    "www.paypal.com",
-    "facebook.com",
-    "www.facebook.com",
-    "instagram.com",
-    "open.spotify.com",
-    "calendly.com",
-    "docs.google.com",
-    "forms.gle",
-}
 
-
-def _is_benign_iframe_domain(domain: str, expected_domain: str) -> bool:
+def _is_trusted_domain(domain: str, expected_domain: str, trusted_domains: list[str]) -> bool:
     if expected_domain in domain:
         return True
-    return any(domain == d or domain.endswith(f".{d}") for d in KNOWN_BENIGN_IFRAME_DOMAINS)
+    return any(domain == d or domain.endswith(f".{d}") for d in trusted_domains)
 
 
 class ContentIntegrityChecker:
@@ -83,14 +54,18 @@ class ContentIntegrityChecker:
                 issues.append(f"suspicious pattern matched: {pattern.description or pattern.pattern}")
 
         expected_domain = site.expected_domain
+        trusted_domains = [
+            d.domain for d in db.query(TrustedDomain).filter(TrustedDomain.enabled.is_(True)).all()
+        ]
+
         for match in IFRAME_RE.finditer(result.body):
             domain = urlparse(match.group(1)).netloc
-            if domain and not _is_benign_iframe_domain(domain, expected_domain):
+            if domain and not _is_trusted_domain(domain, expected_domain, trusted_domains):
                 issues.append(f"iframe to unknown domain: {domain}")
 
         for match in META_REFRESH_RE.finditer(result.body):
             domain = urlparse(match.group(1).strip()).netloc
-            if domain and expected_domain not in domain:
+            if domain and not _is_trusted_domain(domain, expected_domain, trusted_domains):
                 issues.append(f"external meta-refresh to {domain}")
 
         content_ok = not issues
