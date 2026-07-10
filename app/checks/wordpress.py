@@ -27,12 +27,37 @@ class WordPressChecker:
                 url, headers={"X-SiteWatch-Token": site.mu_plugin_token}, timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
                 if resp.status != 200:
+                    reason = (
+                        "mu-plugin not installed or the REST route isn't registered"
+                        if resp.status == 404
+                        else "token mismatch (check X-SiteWatch-Token vs SITEWATCH_TOKEN)"
+                        if resp.status == 401
+                        else f"HTTP {resp.status}"
+                    )
+                    await incident_manager.open_incident(
+                        db,
+                        site,
+                        CheckType.wp_unreachable,
+                        Severity.warning,
+                        cause=f"{site.name}: can't reach the SiteWatch mu-plugin report endpoint ({reason})",
+                        detail={"status": resp.status, "url": url},
+                    )
                     return CheckOutcome(
                         success=False, check_type=self.check_type, status_code=resp.status, error_message=f"HTTP {resp.status}"
                     )
                 report = await resp.json()
         except aiohttp.ClientError as exc:
+            await incident_manager.open_incident(
+                db,
+                site,
+                CheckType.wp_unreachable,
+                Severity.warning,
+                cause=f"{site.name}: can't reach the SiteWatch mu-plugin report endpoint ({exc})",
+                detail={"error": str(exc), "url": url},
+            )
             return CheckOutcome(success=False, check_type=self.check_type, error_message=str(exc))
+
+        await incident_manager.close_incident(db, site, CheckType.wp_unreachable)
 
         previous = (
             db.query(WpSnapshot)

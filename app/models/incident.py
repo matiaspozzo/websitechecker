@@ -20,6 +20,7 @@ class CheckType(str, enum.Enum):
     new_admin = "new_admin"
     dependency_cve = "dependency_cve"
     blacklist = "blacklist"
+    wp_unreachable = "wp_unreachable"
 
 
 class Severity(str, enum.Enum):

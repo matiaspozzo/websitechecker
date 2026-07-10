@@ -129,35 +129,53 @@ export function SiteDetail() {
         <LatencyChart points={latency} />
       </section>
 
-      {site.type === "wordpress" && wpInventory?.snapshot && (
+      {site.type === "wordpress" && site.monitoring_mode === "full" && (
         <section className="mb-6 rounded-lg border border-border bg-surface p-4">
           <h2 className="mb-2 font-mono text-sm font-medium text-ink">WordPress inventory</h2>
-          <p className="mb-2 font-mono text-xs text-ink-muted">
-            core {wpInventory.snapshot.core_version}
-            {wpInventory.snapshot.core_update_available && ` → ${wpInventory.snapshot.core_update_available} available`}
-            {" · PHP "}
-            {wpInventory.snapshot.php_version}
-          </p>
-          <table className="w-full font-mono text-xs">
-            <thead>
-              <tr className="text-left text-ink-muted">
-                <th className="py-1 font-normal">Plugin</th>
-                <th className="py-1 font-normal">Installed</th>
-                <th className="py-1 font-normal">Available</th>
-              </tr>
-            </thead>
-            <tbody>
-              {wpInventory.snapshot.plugins.map((p) => (
-                <tr key={p.slug} className="border-t border-border/60">
-                  <td className="py-1 text-ink">{p.slug}</td>
-                  <td className="py-1 text-ink-muted">{p.installed}</td>
-                  <td className={`py-1 ${p.available && p.available !== p.installed ? "text-status-warning" : "text-ink-muted"}`}>
-                    {p.available ?? "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {wpInventory?.snapshot ? (
+            <>
+              <p className="mb-2 font-mono text-xs text-ink-muted">
+                core {wpInventory.snapshot.core_version}
+                {wpInventory.snapshot.core_update_available && ` → ${wpInventory.snapshot.core_update_available} available`}
+                {" · PHP "}
+                {wpInventory.snapshot.php_version}
+              </p>
+              <table className="w-full font-mono text-xs">
+                <thead>
+                  <tr className="text-left text-ink-muted">
+                    <th className="py-1 font-normal">Plugin</th>
+                    <th className="py-1 font-normal">Installed</th>
+                    <th className="py-1 font-normal">Available</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wpInventory.snapshot.plugins.map((p) => (
+                    <tr key={p.slug} className="border-t border-border/60">
+                      <td className="py-1 text-ink">{p.slug}</td>
+                      <td className="py-1 text-ink-muted">{p.installed}</td>
+                      <td className={`py-1 ${p.available && p.available !== p.installed ? "text-status-warning" : "text-ink-muted"}`}>
+                        {p.available ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : site.mu_plugin_token ? (
+            <p className="font-mono text-xs text-status-warning">
+              No inventory data yet. If this doesn't resolve after "check now", the mu-plugin's
+              report endpoint likely isn't reachable — check the incident history below, and see{" "}
+              <code className="text-ink">agents/wp-mu-plugin/README.md</code> to verify install.
+            </p>
+          ) : (
+            <p className="font-mono text-xs text-ink-muted">
+              No mu-plugin token configured for this site —{" "}
+              <Link to={`/sites/${site.id}/edit`} className="text-accent underline">
+                add one
+              </Link>{" "}
+              to enable WordPress inventory checks.
+            </p>
+          )}
         </section>
       )}
 
