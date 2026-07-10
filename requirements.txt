@@ -13,6 +13,7 @@ python-whois>=0.9.4
 asyncssh>=2.17
 python-dotenv>=1.0
 tzdata>=2024.2
+cryptography>=42.0
 
 pytest>=8.3
 pytest-asyncio>=0.24

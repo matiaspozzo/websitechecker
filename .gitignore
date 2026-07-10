@@ -28,3 +28,4 @@ app/static/
 # IDE
 .vscode/
 .idea/
+.claude/

@@ -69,6 +69,8 @@ export interface SiteDashboardEntry {
   avg_latency_ms: number | null
   sparkline: SparklinePoint[]
   next_ssl_expiry: string | null
+  ssl_valid: boolean | null
+  ssl_error: string | null
   next_domain_expiry: string | null
   vulnerable_plugin_count: number
   open_incident_count: number

@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 
 import aiohttp
 import whois
+from cryptography import x509
 from sqlalchemy.orm import Session
 
 from app import incident_manager
@@ -20,21 +21,36 @@ from app.models.ssl_domain_status import SslDomainStatus
 logger = logging.getLogger(__name__)
 
 
-def _get_ssl_expiry(hostname: str, port: int = 443, timeout: float = 10) -> tuple[datetime | None, str | None]:
-    context = ssl.create_default_context()
+def _fetch_peer_cert_expiry(hostname: str, port: int, timeout: float) -> datetime | None:
+    """Read the certificate's real notAfter date regardless of whether it would
+    pass validation -- an unverified handshake still lets us see an expired or
+    self-signed cert's actual expiry, instead of only knowing "invalid"."""
+    context = ssl._create_unverified_context()
     try:
         with socket.create_connection((hostname, port), timeout=timeout) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                cert = ssock.getpeercert()
-        not_after = cert.get("notAfter") if cert else None
-        if not not_after:
-            return None, "certificate had no notAfter field"
-        expiry = datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z").replace(tzinfo=timezone.utc)
+                der = ssock.getpeercert(binary_form=True)
+    except (OSError, TimeoutError):
+        return None
+    if not der:
+        return None
+    cert = x509.load_der_x509_certificate(der)
+    return cert.not_valid_after_utc
+
+
+def _get_ssl_expiry(hostname: str, port: int = 443, timeout: float = 10) -> tuple[datetime | None, str | None]:
+    expiry = _fetch_peer_cert_expiry(hostname, port, timeout)
+
+    context = ssl.create_default_context()
+    try:
+        with socket.create_connection((hostname, port), timeout=timeout) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname):
+                pass
         return expiry, None
     except ssl.SSLCertVerificationError as exc:
-        return None, f"SSL verification error: {exc}"
+        return expiry, f"SSL verification error: {exc}"
     except (OSError, TimeoutError) as exc:
-        return None, f"SSL connection error: {exc}"
+        return expiry, f"SSL connection error: {exc}"
 
 
 def _get_domain_expiry(domain: str) -> tuple[datetime | None, str | None]:
@@ -87,13 +103,14 @@ class SslDomainChecker:
         now = datetime.now(timezone.utc)
 
         if ssl_error:
+            expiry_note = f" (cert notAfter: {ssl_expiry.date()})" if ssl_expiry else ""
             await incident_manager.open_incident(
                 db,
                 site,
                 CheckType.ssl,
                 Severity.critical,
-                cause=f"{site.name} SSL error: {ssl_error}",
-                detail={"error": ssl_error},
+                cause=f"{site.name} SSL error: {ssl_error}{expiry_note}",
+                detail={"error": ssl_error, "expires_at": ssl_expiry.isoformat() if ssl_expiry else None},
             )
         elif ssl_expiry:
             days_remaining = (ssl_expiry - now).days

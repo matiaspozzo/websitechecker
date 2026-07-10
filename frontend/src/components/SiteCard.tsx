@@ -16,6 +16,28 @@ function daysUntil(iso: string | null): number | null {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
 }
 
+function formatCertDays(days: number | null): string {
+  if (days === null) return "—"
+  return days < 0 ? `expired ${-days}d ago` : `${days}d`
+}
+
+function sslLabel(sslValid: boolean | null, days: number | null): string {
+  if (sslValid === null) return "SSL —"
+  if (sslValid === false) return `SSL invalid (${formatCertDays(days)})`
+  return `SSL ${formatCertDays(days)}`
+}
+
+function sslColorClass(sslValid: boolean | null, days: number | null): string {
+  if (sslValid === false) return "text-status-critical"
+  if (days !== null && days <= 14) return "text-status-warning"
+  return "text-ink-muted"
+}
+
+function domainColorClass(days: number | null): string {
+  if (days !== null && days <= 30) return "text-status-warning"
+  return "text-ink-muted"
+}
+
 export function SiteCard({ site }: { site: SiteDashboardEntry }) {
   const sslDays = daysUntil(site.next_ssl_expiry)
   const domainDays = daysUntil(site.next_domain_expiry)
@@ -44,28 +66,27 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
         <Sparkline points={site.sparkline} />
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2 font-mono text-[11px]">
-        {sslDays !== null && sslDays <= 14 && (
-          <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
-            SSL {sslDays}d
-          </span>
-        )}
-        {domainDays !== null && domainDays <= 30 && (
-          <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
-            domain {domainDays}d
-          </span>
-        )}
-        {site.vulnerable_plugin_count > 0 && (
-          <span className="rounded border border-status-critical/40 px-1.5 py-0.5 text-status-critical">
-            {site.vulnerable_plugin_count} vuln plugin{site.vulnerable_plugin_count > 1 ? "s" : ""}
-          </span>
-        )}
-        {site.open_incident_count > 0 && (
-          <span className="rounded border border-status-down/40 px-1.5 py-0.5 text-status-down">
-            {site.open_incident_count} open incident{site.open_incident_count > 1 ? "s" : ""}
-          </span>
-        )}
+      <div className="mt-3 flex items-center gap-3 font-mono text-[11px]">
+        <span className={sslColorClass(site.ssl_valid, sslDays)} title={site.ssl_error ?? undefined}>
+          {sslLabel(site.ssl_valid, sslDays)}
+        </span>
+        <span className={domainColorClass(domainDays)}>domain {formatCertDays(domainDays)}</span>
       </div>
+
+      {(site.vulnerable_plugin_count > 0 || site.open_incident_count > 0) && (
+        <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px]">
+          {site.vulnerable_plugin_count > 0 && (
+            <span className="rounded border border-status-critical/40 px-1.5 py-0.5 text-status-critical">
+              {site.vulnerable_plugin_count} vuln plugin{site.vulnerable_plugin_count > 1 ? "s" : ""}
+            </span>
+          )}
+          {site.open_incident_count > 0 && (
+            <span className="rounded border border-status-down/40 px-1.5 py-0.5 text-status-down">
+              {site.open_incident_count} open incident{site.open_incident_count > 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+      )}
     </Link>
   )
 }

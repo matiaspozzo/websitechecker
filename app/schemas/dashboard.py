@@ -23,6 +23,8 @@ class SiteDashboardEntry(BaseModel):
     avg_latency_ms: float | None
     sparkline: list[SparklinePoint]
     next_ssl_expiry: datetime | None
+    ssl_valid: bool | None
+    ssl_error: str | None
     next_domain_expiry: datetime | None
     vulnerable_plugin_count: int
     open_incident_count: int
