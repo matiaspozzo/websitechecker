@@ -11,6 +11,7 @@ venv/
 # Env / secrets
 .env
 data/*.db
+data/last_alive.txt
 data/logs/*
 data/ssh_keys/*
 !data/logs/.gitkeep
