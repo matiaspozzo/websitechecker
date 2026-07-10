@@ -28,6 +28,12 @@ body,
   height: 100%;
 }
 
+html {
+  /* Bumps every rem-based Tailwind text utility (text-xs, text-sm, ...)
+     proportionally across the whole app, instead of touching every component. */
+  font-size: 17px;
+}
+
 body {
   margin: 0;
   background-color: var(--color-bg);
