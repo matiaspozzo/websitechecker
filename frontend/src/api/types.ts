@@ -80,6 +80,8 @@ export interface SiteDashboardEntry {
   vulnerable_plugin_count: number
   outdated_plugin_count: number
   core_update_available: string | null
+  mu_plugin_version: string | null
+  mu_plugin_outdated: boolean
   open_incident_count: number
 }
 
@@ -123,6 +125,8 @@ export interface TrustedDomain {
 export interface WpInventory {
   snapshot: {
     timestamp: string
+    mu_plugin_version: string | null
+    mu_plugin_outdated: boolean
     core_version: string | null
     core_update_available: string | null
     php_version: string | null

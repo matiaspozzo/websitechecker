@@ -101,6 +101,43 @@ async def test_success_closes_wp_unreachable_incident(db, site):
     mock_close.assert_called_once()
 
 
+async def test_captures_mu_plugin_version_from_report(db, site):
+    checker = WordPressChecker()
+    report = {
+        "mu_plugin_version": "1.1.0",
+        "core_version": "6.5",
+        "core_update_available": None,
+        "php_version": "8.2",
+        "plugins": [],
+        "themes": [],
+        "admin_usernames": ["admin"],
+    }
+    await checker.run(site, db, _FakeSession(_FakeResponse(200, report)))
+
+    from app.models.wp_snapshot import WpSnapshot
+
+    snapshot = db.query(WpSnapshot).filter(WpSnapshot.site_id == site.id).first()
+    assert snapshot.mu_plugin_version == "1.1.0"
+
+
+async def test_missing_mu_plugin_version_is_none(db, site):
+    # Older mu-plugin copies (pre-version-reporting) simply won't have the key.
+    checker = WordPressChecker()
+    report = {
+        "core_version": "6.5",
+        "php_version": "8.2",
+        "plugins": [],
+        "themes": [],
+        "admin_usernames": ["admin"],
+    }
+    await checker.run(site, db, _FakeSession(_FakeResponse(200, report)))
+
+    from app.models.wp_snapshot import WpSnapshot
+
+    snapshot = db.query(WpSnapshot).filter(WpSnapshot.site_id == site.id).first()
+    assert snapshot.mu_plugin_version is None
+
+
 async def test_500_with_not_configured_body_gives_specific_reason(db, site):
     # Mirrors the real Victoria Fones case: mu-plugin file present and returning
     # 500, but SITEWATCH_TOKEN was never defined in wp-config.php. Should not be

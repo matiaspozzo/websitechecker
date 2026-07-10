@@ -14,6 +14,7 @@ class WpSnapshot(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     site_id: Mapped[int] = mapped_column(ForeignKey("sites.id", ondelete="CASCADE"))
     timestamp: Mapped[datetime] = mapped_column(UTCDateTime, server_default=func.now())
+    mu_plugin_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
     core_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     core_update_available: Mapped[str | None] = mapped_column(String(50), nullable=True)
     php_version: Mapped[str | None] = mapped_column(String(50), nullable=True)

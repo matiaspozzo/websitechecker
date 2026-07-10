@@ -62,8 +62,17 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
       {(site.core_update_available ||
         site.vulnerable_plugin_count > 0 ||
         site.outdated_plugin_count > 0 ||
-        site.open_incident_count > 0) && (
+        site.open_incident_count > 0 ||
+        site.mu_plugin_outdated) && (
         <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px]">
+          {site.mu_plugin_outdated && (
+            <span
+              className="rounded border border-border px-1.5 py-0.5 text-ink-muted"
+              title={`Installed: ${site.mu_plugin_version ?? "unknown (pre-1.1.0)"} — re-upload sitewatch-report.php`}
+            >
+              mu-plugin outdated
+            </span>
+          )}
           {site.core_update_available && (
             <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
               core update: {site.core_update_available}

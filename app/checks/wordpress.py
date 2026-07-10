@@ -13,6 +13,12 @@ from app.models.wp_snapshot import WpSnapshot
 
 logger = logging.getLogger(__name__)
 
+# Keep in sync with SITEWATCH_MU_PLUGIN_VERSION in agents/wp-mu-plugin/sitewatch-report.php.
+# Sites reporting an older (or missing) version get an "outdated mu-plugin" flag
+# on the dashboard, so it's visible which sites still need the file re-uploaded
+# after a change like the one that added this version reporting.
+CURRENT_MU_PLUGIN_VERSION = "1.1.0"
+
 
 class WordPressChecker:
     check_type = "wp"
@@ -91,6 +97,7 @@ class WordPressChecker:
 
         snapshot = WpSnapshot(
             site_id=site.id,
+            mu_plugin_version=report.get("mu_plugin_version"),
             core_version=report.get("core_version"),
             core_update_available=report.get("core_update_available"),
             php_version=report.get("php_version"),

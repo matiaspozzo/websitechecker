@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.checks.wordpress import CURRENT_MU_PLUGIN_VERSION
 from app.deps import get_current_user, get_db
 from app.models.check_result import CheckResult
 from app.models.dependency_audit import DependencyAudit
@@ -22,7 +23,7 @@ def _require_site(site_id: int, db: Session) -> Site:
 
 @router.get("/{site_id}/wp-inventory")
 def get_wp_inventory(site_id: int, db: Session = Depends(get_db)) -> dict:
-    _require_site(site_id, db)
+    site = _require_site(site_id, db)
     snapshot = (
         db.query(WpSnapshot)
         .filter(WpSnapshot.site_id == site_id)
@@ -34,6 +35,8 @@ def get_wp_inventory(site_id: int, db: Session = Depends(get_db)) -> dict:
     return {
         "snapshot": {
             "timestamp": snapshot.timestamp,
+            "mu_plugin_version": snapshot.mu_plugin_version,
+            "mu_plugin_outdated": bool(site.mu_plugin_token) and snapshot.mu_plugin_version != CURRENT_MU_PLUGIN_VERSION,
             "core_version": snapshot.core_version,
             "core_update_available": snapshot.core_update_available,
             "php_version": snapshot.php_version,

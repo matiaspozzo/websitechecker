@@ -54,6 +54,14 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                       basic
                     </span>
                   )}
+                  {site.mu_plugin_outdated && (
+                    <span
+                      className="ml-1.5 rounded border border-border px-1 py-0.5 text-[10px] uppercase text-ink-muted"
+                      title={`Installed mu-plugin: ${site.mu_plugin_version ?? "unknown (pre-1.1.0)"} — re-upload sitewatch-report.php`}
+                    >
+                      mu-plugin outdated
+                    </span>
+                  )}
                   <div className="truncate text-xs text-ink-muted">{site.url}</div>
                 </td>
                 <td className="px-2 py-2 text-ink-muted">{formatPct(site.uptime_24h_pct)}</td>

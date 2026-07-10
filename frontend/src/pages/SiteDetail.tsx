@@ -134,11 +134,19 @@ export function SiteDetail() {
           <h2 className="mb-2 font-mono text-sm font-medium text-ink">WordPress inventory</h2>
           {wpInventory?.snapshot ? (
             <>
-              <p className="mb-2 font-mono text-xs text-ink-muted">
+              <p className="mb-1 font-mono text-xs text-ink-muted">
                 core {wpInventory.snapshot.core_version}
                 {wpInventory.snapshot.core_update_available && ` → ${wpInventory.snapshot.core_update_available} available`}
                 {" · PHP "}
                 {wpInventory.snapshot.php_version}
+              </p>
+              <p className="mb-2 font-mono text-xs">
+                <span className="text-ink-muted">mu-plugin: {wpInventory.snapshot.mu_plugin_version ?? "unknown (pre-1.1.0)"}</span>
+                {wpInventory.snapshot.mu_plugin_outdated && (
+                  <span className="ml-2 text-status-warning">
+                    outdated — re-upload sitewatch-report.php to this site
+                  </span>
+                )}
               </p>
               <table className="w-full font-mono text-xs">
                 <thead>

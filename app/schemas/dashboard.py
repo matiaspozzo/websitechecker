@@ -31,6 +31,8 @@ class SiteDashboardEntry(BaseModel):
     vulnerable_plugin_count: int
     outdated_plugin_count: int
     core_update_available: str | None
+    mu_plugin_version: str | None
+    mu_plugin_outdated: bool
     open_incident_count: int
 
 

@@ -4,12 +4,18 @@
  * Description: Token-protected REST endpoint reporting WordPress core/plugin/theme
  *              versions, PHP version, and admin usernames, for the SiteWatch
  *              monitoring system to poll once a day.
- * Version: 1.0.0
+ * Version: 1.1.0
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Bump this whenever the report shape or behavior changes. SiteWatch reads it
+// back from the response and shows an "outdated mu-plugin" badge on any site
+// still running an older copy of this file, so you can tell which sites still
+// need the updated file uploaded without having to track it by hand.
+define('SITEWATCH_MU_PLUGIN_VERSION', '1.1.0');
 
 add_action('rest_api_init', function () {
     register_rest_route('sitewatch/v1', '/report', [
@@ -119,6 +125,7 @@ function sitewatch_report_handler(WP_REST_Request $request) {
     $admin_usernames = array_map(fn($u) => $u->user_login, $admins);
 
     return new WP_REST_Response([
+        'mu_plugin_version' => SITEWATCH_MU_PLUGIN_VERSION,
         'core_version' => $core_version,
         'core_update_available' => $core_update_available,
         'php_version' => phpversion(),

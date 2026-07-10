@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.checks.wordpress import CURRENT_MU_PLUGIN_VERSION
 from app.deps import get_current_user, get_db
 from app.models.check_result import CheckResult
 from app.models.incident import CheckType, Incident
@@ -74,6 +75,8 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
 
         outdated_plugin_count = 0
         core_update_available = None
+        mu_plugin_version = None
+        mu_plugin_outdated = False
         if site.type == SiteType.wordpress:
             wp_snapshot = (
                 db.query(WpSnapshot)
@@ -88,6 +91,9 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                     if plugin.get("available") and plugin.get("available") != plugin.get("installed")
                 )
                 core_update_available = wp_snapshot.core_update_available
+                mu_plugin_version = wp_snapshot.mu_plugin_version
+                if site.mu_plugin_token:
+                    mu_plugin_outdated = mu_plugin_version != CURRENT_MU_PLUGIN_VERSION
 
         entries.append(
             SiteDashboardEntry(
@@ -110,6 +116,8 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                 vulnerable_plugin_count=open_wp_cve,
                 outdated_plugin_count=outdated_plugin_count,
                 core_update_available=core_update_available,
+                mu_plugin_version=mu_plugin_version,
+                mu_plugin_outdated=mu_plugin_outdated,
                 open_incident_count=open_incidents,
             )
         )
