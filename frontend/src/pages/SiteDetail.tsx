@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { api } from "../api/client"
 import type {
@@ -11,6 +11,13 @@ import type {
 import { IncidentTable } from "../components/IncidentTable"
 import { LatencyChart } from "../components/LatencyChart"
 
+// Checks retry with 5s/15s/30s backoff before giving up (uptime, then content
+// does its own separate fetch+retry too), so a single check-now can legitimately
+// take up to ~100s on a genuinely down site. Poll for a while instead of a single
+// short-delay refresh, or "check now" looks like it did nothing.
+const POLL_INTERVAL_MS = 5000
+const POLL_DURATION_MS = 120_000
+
 export function SiteDetail() {
   const { id } = useParams()
   const [site, setSite] = useState<Site | null>(null)
@@ -20,6 +27,7 @@ export function SiteDetail() {
   const [audits, setAudits] = useState<DependencyAuditSummary[]>([])
   const [range, setRange] = useState<"7d" | "30d">("7d")
   const [message, setMessage] = useState<string | null>(null)
+  const pollRef = useRef<{ interval: ReturnType<typeof setInterval>; timeout: ReturnType<typeof setTimeout> } | null>(null)
 
   function load() {
     if (!id) return
@@ -27,6 +35,7 @@ export function SiteDetail() {
     api.get<Incident[]>(`/incidents?site_id=${id}`).then(setIncidents)
     api.get<LatencyPoint[]>(`/sites/${id}/latency?range=${range}`).then(setLatency)
     api.get<DependencyAuditSummary[]>(`/sites/${id}/dependency-audits`).then(setAudits)
+    api.get<WpInventory>(`/sites/${id}/wp-inventory`).then(setWpInventory)
   }
 
   useEffect(() => {
@@ -35,16 +44,32 @@ export function SiteDetail() {
   }, [id, range])
 
   useEffect(() => {
-    if (site?.type === "wordpress" && id) {
-      api.get<WpInventory>(`/sites/${id}/wp-inventory`).then(setWpInventory)
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current.interval)
+        clearTimeout(pollRef.current.timeout)
+      }
     }
-  }, [site?.type, id])
+  }, [])
 
   async function checkNow() {
     if (!id) return
-    setMessage("Check started…")
+    if (pollRef.current) {
+      clearInterval(pollRef.current.interval)
+      clearTimeout(pollRef.current.timeout)
+    }
+
+    setMessage("Check started — this can take up to ~100s on a down site (retry/backoff before giving up)…")
     await api.post(`/sites/${id}/check-now`)
-    setTimeout(load, 3000)
+
+    const interval = setInterval(load, POLL_INTERVAL_MS)
+    const timeout = setTimeout(() => {
+      clearInterval(interval)
+      pollRef.current = null
+      setMessage(null)
+      load()
+    }, POLL_DURATION_MS)
+    pollRef.current = { interval, timeout }
   }
 
   async function silence() {

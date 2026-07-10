@@ -15,7 +15,7 @@ itself sits behind NAT with no public IP.
    `/* That's all, stop editing! */` line):
 
    ```php
-   define('SITEWATCH_TOKEN', 'a-long-random-string-shared-with-sitewatch');
+   define('SITEWATCH_TOKEN', 'REDACTED_MU_PLUGIN_TOKEN');
    ```
 
    Generate one with `openssl rand -hex 32` or similar.
@@ -40,3 +40,4 @@ and `admin_usernames`. A wrong or missing token returns `401`.
   which the mu-plugin loads on demand since REST requests don't normally
   pull in wp-admin code.
 - Rotate the token by changing it in both `wp-config.php` and the panel.
+
