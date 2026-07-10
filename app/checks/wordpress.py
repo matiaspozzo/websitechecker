@@ -17,6 +17,31 @@ logger = logging.getLogger(__name__)
 class WordPressChecker:
     check_type = "wp"
 
+    # WP_Error codes the mu-plugin itself returns (sitewatch-report.php) -- prefer
+    # these over guessing from the HTTP status alone, since e.g. a 500 could be our
+    # own "not configured" error or an unrelated PHP fatal, and only the body tells
+    # them apart.
+    _KNOWN_ERROR_CODES = {
+        "sitewatch_not_configured": "SITEWATCH_TOKEN is not defined in wp-config.php on the site",
+        "sitewatch_unauthorized": "token mismatch -- the mu-plugin token in the panel doesn't match SITEWATCH_TOKEN in wp-config.php",
+    }
+
+    async def _describe_error(self, resp: aiohttp.ClientResponse) -> str:
+        try:
+            body = await resp.json(content_type=None)
+        except (aiohttp.ContentTypeError, ValueError):
+            body = None
+
+        code = body.get("code") if isinstance(body, dict) else None
+        if code in self._KNOWN_ERROR_CODES:
+            return self._KNOWN_ERROR_CODES[code]
+        if resp.status == 404:
+            return "mu-plugin not installed or the REST route isn't registered"
+        if resp.status == 401:
+            return "token mismatch (check X-SiteWatch-Token vs SITEWATCH_TOKEN)"
+        message = body.get("message") if isinstance(body, dict) else None
+        return message or f"HTTP {resp.status}"
+
     async def run(self, site: Site, db: Session, http: aiohttp.ClientSession) -> CheckOutcome:
         if not site.mu_plugin_token:
             return CheckOutcome(success=True, check_type=self.check_type, error_message="mu-plugin token not configured")
@@ -27,13 +52,7 @@ class WordPressChecker:
                 url, headers={"X-SiteWatch-Token": site.mu_plugin_token}, timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
                 if resp.status != 200:
-                    reason = (
-                        "mu-plugin not installed or the REST route isn't registered"
-                        if resp.status == 404
-                        else "token mismatch (check X-SiteWatch-Token vs SITEWATCH_TOKEN)"
-                        if resp.status == 401
-                        else f"HTTP {resp.status}"
-                    )
+                    reason = await self._describe_error(resp)
                     await incident_manager.open_incident(
                         db,
                         site,

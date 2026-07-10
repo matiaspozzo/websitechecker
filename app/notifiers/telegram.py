@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta, timezone
+from html import escape as _esc
 
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -61,8 +62,8 @@ async def send_incident_open(incident: Incident, site: Site) -> None:
         db.close()
     emoji = SEVERITY_EMOJI.get(incident.severity.value, "\U0001F534")
     text = (
-        f"{emoji} <b>{site.name}</b>\n"
-        f"{incident.cause}\n"
+        f"{emoji} <b>{_esc(site.name)}</b>\n"
+        f"{_esc(incident.cause)}\n"
         f"Check: {incident.check_type.value} | {format_timestamp(incident.opened_at)}\n"
         f"{link}"
     )
@@ -79,7 +80,7 @@ async def send_incident_close(incident: Incident, site: Site) -> None:
     if incident.opened_at and incident.closed_at:
         duration = f" (down {format_duration(incident.closed_at - incident.opened_at)})"
     text = (
-        f"\U0001F7E2 <b>{site.name}</b> recovered{duration}\n"
+        f"\U0001F7E2 <b>{_esc(site.name)}</b> recovered{duration}\n"
         f"Check: {incident.check_type.value} | {format_timestamp(incident.closed_at)}\n"
         f"{link}"
     )
@@ -126,9 +127,9 @@ async def send_digest() -> None:
                 latencies = [r.latency_ms for r in results if r.latency_ms is not None]
                 avg_latency = sum(latencies) / len(latencies) if latencies else None
                 latency_str = f"{avg_latency:.0f}ms" if avg_latency is not None else "n/a"
-                lines.append(f"- {site.name}: {uptime_pct:.1f}% uptime 24h, {latency_str} avg")
+                lines.append(f"- {_esc(site.name)}: {uptime_pct:.1f}% uptime 24h, {latency_str} avg")
             else:
-                lines.append(f"- {site.name}: no data")
+                lines.append(f"- {_esc(site.name)}: no data")
 
             snapshot = (
                 db.query(WpSnapshot)
@@ -139,7 +140,7 @@ async def send_digest() -> None:
             if snapshot:
                 outdated = [p for p in snapshot.plugins_json if p.get("available") and p.get("available") != p.get("installed")]
                 if outdated:
-                    lines.append(f"  outdated (no known CVE): {', '.join(p['slug'] for p in outdated)}")
+                    lines.append(f"  outdated (no known CVE): {_esc(', '.join(p['slug'] for p in outdated))}")
 
             ssl_status = (
                 db.query(SslDomainStatus)
