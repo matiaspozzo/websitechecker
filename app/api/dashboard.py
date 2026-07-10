@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 from app.deps import get_current_user, get_db
 from app.models.check_result import CheckResult
 from app.models.incident import CheckType, Incident
-from app.models.site import Site
+from app.models.site import Site, SiteType
 from app.models.ssl_domain_status import SslDomainStatus
+from app.models.wp_snapshot import WpSnapshot
 from app.schemas.dashboard import DashboardResponse, SiteDashboardEntry, SparklinePoint
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"], dependencies=[Depends(get_current_user)])
@@ -71,6 +72,21 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
             db.query(Incident).filter(Incident.site_id == site.id, Incident.closed_at.is_(None)).count()
         )
 
+        outdated_plugin_count = 0
+        if site.type == SiteType.wordpress:
+            wp_snapshot = (
+                db.query(WpSnapshot)
+                .filter(WpSnapshot.site_id == site.id)
+                .order_by(WpSnapshot.timestamp.desc())
+                .first()
+            )
+            if wp_snapshot:
+                outdated_plugin_count = sum(
+                    1
+                    for plugin in wp_snapshot.plugins_json
+                    if plugin.get("available") and plugin.get("available") != plugin.get("installed")
+                )
+
         entries.append(
             SiteDashboardEntry(
                 id=site.id,
@@ -89,6 +105,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
                 ssl_error=ssl_status.ssl_error if ssl_status else None,
                 next_domain_expiry=ssl_status.domain_expires_at if ssl_status else None,
                 vulnerable_plugin_count=open_wp_cve,
+                outdated_plugin_count=outdated_plugin_count,
                 open_incident_count=open_incidents,
             )
         )

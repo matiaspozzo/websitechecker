@@ -76,6 +76,7 @@ export interface SiteDashboardEntry {
   ssl_error: string | null
   next_domain_expiry: string | null
   vulnerable_plugin_count: number
+  outdated_plugin_count: number
   open_incident_count: number
 }
 

@@ -54,11 +54,16 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
         <span className={domainColorClass(domainDays)}>domain {formatCertDays(domainDays)}</span>
       </div>
 
-      {(site.vulnerable_plugin_count > 0 || site.open_incident_count > 0) && (
+      {(site.vulnerable_plugin_count > 0 || site.outdated_plugin_count > 0 || site.open_incident_count > 0) && (
         <div className="mt-2 flex flex-wrap gap-2 font-mono text-[11px]">
           {site.vulnerable_plugin_count > 0 && (
             <span className="rounded border border-status-critical/40 px-1.5 py-0.5 text-status-critical">
               {site.vulnerable_plugin_count} vuln plugin{site.vulnerable_plugin_count > 1 ? "s" : ""}
+            </span>
+          )}
+          {site.outdated_plugin_count > 0 && (
+            <span className="rounded border border-status-warning/40 px-1.5 py-0.5 text-status-warning">
+              {site.outdated_plugin_count} plugin{site.outdated_plugin_count > 1 ? "s" : ""} to update
             </span>
           )}
           {site.open_incident_count > 0 && (

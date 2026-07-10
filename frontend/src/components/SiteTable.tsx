@@ -29,6 +29,7 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
             <th className="px-2 py-2 font-normal">SSL</th>
             <th className="px-2 py-2 font-normal">Domain</th>
             <th className="px-2 py-2 font-normal">Vuln</th>
+            <th className="px-2 py-2 font-normal">Updates</th>
             <th className="px-2 py-2 pr-4 font-normal">Incidents</th>
           </tr>
         </thead>
@@ -62,6 +63,13 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                 <td className="px-2 py-2">
                   {site.vulnerable_plugin_count > 0 ? (
                     <span className="text-status-critical">{site.vulnerable_plugin_count}</span>
+                  ) : (
+                    <span className="text-ink-muted">—</span>
+                  )}
+                </td>
+                <td className="px-2 py-2">
+                  {site.outdated_plugin_count > 0 ? (
+                    <span className="text-status-warning">{site.outdated_plugin_count}</span>
                   ) : (
                     <span className="text-ink-muted">—</span>
                   )}

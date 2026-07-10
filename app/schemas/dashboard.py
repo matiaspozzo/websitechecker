@@ -28,6 +28,7 @@ class SiteDashboardEntry(BaseModel):
     ssl_error: str | None
     next_domain_expiry: datetime | None
     vulnerable_plugin_count: int
+    outdated_plugin_count: int
     open_incident_count: int
 
 
