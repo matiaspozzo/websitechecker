@@ -23,6 +23,11 @@ export function SiteCard({ site }: { site: SiteDashboardEntry }) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
+          {site.client_name && (
+            <div className="truncate font-mono text-[10px] uppercase tracking-wide text-accent-dim">
+              {site.client_name}
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <span className="truncate font-medium text-ink">{site.name}</span>
             {site.monitoring_mode === "basic" && (

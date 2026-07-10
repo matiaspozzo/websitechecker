@@ -7,6 +7,7 @@ from app.models.site import MonitoringMode, SiteType
 
 class SiteBase(BaseModel):
     name: str
+    client_name: str | None = None
     url: str
     type: SiteType
     monitoring_mode: MonitoringMode = MonitoringMode.full
@@ -30,6 +31,7 @@ class SiteCreate(SiteBase):
 
 class SiteUpdate(BaseModel):
     name: str | None = None
+    client_name: str | None = None
     url: str | None = None
     type: SiteType | None = None
     monitoring_mode: MonitoringMode | None = None

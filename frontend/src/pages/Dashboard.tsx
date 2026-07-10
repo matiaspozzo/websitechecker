@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { api } from "../api/client"
 import type { DashboardResponse } from "../api/types"
@@ -8,6 +8,7 @@ import { SiteTable } from "../components/SiteTable"
 type ViewMode = "card" | "list"
 
 const VIEW_MODE_STORAGE_KEY = "sitewatch.dashboardView"
+const UNASSIGNED = "(no client)"
 
 function loadViewMode(): ViewMode {
   const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
@@ -18,6 +19,7 @@ export function Dashboard() {
   const [data, setData] = useState<DashboardResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
+  const [clientFilter, setClientFilter] = useState<string>("")
 
   useEffect(() => {
     let cancelled = false
@@ -40,11 +42,37 @@ export function Dashboard() {
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode)
   }
 
+  const clients = useMemo(() => {
+    if (!data) return []
+    const names = new Set(data.sites.map((s) => s.client_name || UNASSIGNED))
+    return Array.from(names).sort()
+  }, [data])
+
+  const filteredSites = useMemo(() => {
+    if (!data) return []
+    if (!clientFilter) return data.sites
+    return data.sites.filter((s) => (s.client_name || UNASSIGNED) === clientFilter)
+  }, [data, clientFilter])
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-mono text-base font-semibold text-ink">Sites</h1>
         <div className="flex items-center gap-3">
+          {clients.length > 1 && (
+            <select
+              className="rounded border border-border bg-surface px-2 py-1.5 font-mono text-xs text-ink"
+              value={clientFilter}
+              onChange={(e) => setClientFilter(e.target.value)}
+            >
+              <option value="">All clients</option>
+              {clients.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="flex rounded border border-border font-mono text-xs">
             <button
               onClick={() => selectViewMode("card")}
@@ -76,15 +104,19 @@ export function Dashboard() {
         <p className="font-mono text-sm text-ink-muted">No sites yet. Add your first one.</p>
       )}
 
-      {data && data.sites.length > 0 && viewMode === "card" && (
+      {data && data.sites.length > 0 && filteredSites.length === 0 && (
+        <p className="font-mono text-sm text-ink-muted">No sites for this client.</p>
+      )}
+
+      {filteredSites.length > 0 && viewMode === "card" && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {data.sites.map((site) => (
+          {filteredSites.map((site) => (
             <SiteCard key={site.id} site={site} />
           ))}
         </div>
       )}
 
-      {data && data.sites.length > 0 && viewMode === "list" && <SiteTable sites={data.sites} />}
+      {filteredSites.length > 0 && viewMode === "list" && <SiteTable sites={filteredSites} />}
     </div>
   )
 }

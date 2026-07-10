@@ -22,6 +22,7 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
         <thead>
           <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-ink-muted">
             <th className="px-4 py-2 font-normal">Status</th>
+            <th className="px-2 py-2 font-normal">Client</th>
             <th className="px-2 py-2 font-normal">Name</th>
             <th className="px-2 py-2 font-normal">24h</th>
             <th className="px-2 py-2 font-normal">7d</th>
@@ -43,6 +44,7 @@ export function SiteTable({ sites }: { sites: SiteDashboardEntry[] }) {
                 <td className="px-4 py-2">
                   <StatusBadge status={site.status} />
                 </td>
+                <td className="px-2 py-2 text-ink-muted">{site.client_name || "—"}</td>
                 <td className="px-2 py-2">
                   <Link to={`/sites/${site.id}`} className="text-ink hover:text-accent">
                     {site.name}

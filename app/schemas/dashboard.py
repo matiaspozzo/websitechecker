@@ -14,6 +14,7 @@ class SparklinePoint(BaseModel):
 class SiteDashboardEntry(BaseModel):
     id: int
     name: str
+    client_name: str | None
     url: str
     type: SiteType
     monitoring_mode: MonitoringMode

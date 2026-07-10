@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import Boolean, Enum, Integer, String, Text
+from sqlalchemy import Boolean, Enum, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -22,9 +22,11 @@ class MonitoringMode(str, enum.Enum):
 
 class Site(Base):
     __tablename__ = "sites"
+    __table_args__ = (Index("ix_sites_client_name", "client_name"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(255))
+    client_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     url: Mapped[str] = mapped_column(String(1024))
     expected_domain: Mapped[str] = mapped_column(String(255))
     type: Mapped[SiteType] = mapped_column(Enum(SiteType))

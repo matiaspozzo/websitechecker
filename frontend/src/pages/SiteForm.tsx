@@ -5,6 +5,7 @@ import type { MonitoringMode, Site, SiteInput, SiteType } from "../api/types"
 
 const EMPTY: SiteInput = {
   name: "",
+  client_name: "",
   url: "",
   type: "wordpress",
   monitoring_mode: "full",
@@ -37,11 +38,19 @@ export function SiteForm() {
   const [form, setForm] = useState<SiteInput>(EMPTY)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [existingClients, setExistingClients] = useState<string[]>([])
 
   useEffect(() => {
     if (!id) return
     api.get<Site>(`/sites/${id}`).then((site) => setForm(site))
   }, [id])
+
+  useEffect(() => {
+    api.get<Site[]>("/sites").then((sites) => {
+      const names = Array.from(new Set(sites.map((s) => s.client_name).filter((n): n is string => Boolean(n))))
+      setExistingClients(names.sort())
+    })
+  }, [])
 
   function set<K extends keyof SiteInput>(key: K, value: SiteInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
@@ -78,9 +87,26 @@ export function SiteForm() {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-border bg-surface p-5">
-        <div>
-          <label className={labelClass()}>Name</label>
-          <input className={inputClass()} value={form.name} onChange={(e) => set("name", e.target.value)} required />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass()}>Name</label>
+            <input className={inputClass()} value={form.name} onChange={(e) => set("name", e.target.value)} required />
+          </div>
+          <div>
+            <label className={labelClass()}>Client</label>
+            <input
+              className={inputClass()}
+              value={form.client_name ?? ""}
+              onChange={(e) => set("client_name", e.target.value)}
+              placeholder="e.g. Acme Corp"
+              list="existing-clients"
+            />
+            <datalist id="existing-clients">
+              {existingClients.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
         </div>
 
         <div>

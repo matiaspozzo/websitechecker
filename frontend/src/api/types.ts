@@ -4,6 +4,7 @@ export type MonitoringMode = "full" | "basic"
 export interface Site {
   id: number
   name: string
+  client_name: string | null
   url: string
   type: SiteType
   monitoring_mode: MonitoringMode
@@ -62,6 +63,7 @@ export type SiteStatus = "up" | "down" | "paused" | "unknown"
 export interface SiteDashboardEntry {
   id: number
   name: string
+  client_name: string | null
   url: string
   type: SiteType
   monitoring_mode: MonitoringMode

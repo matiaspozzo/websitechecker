@@ -93,6 +93,7 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
             SiteDashboardEntry(
                 id=site.id,
                 name=site.name,
+                client_name=site.client_name,
                 url=site.url,
                 type=site.type,
                 monitoring_mode=site.monitoring_mode,
