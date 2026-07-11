@@ -76,6 +76,13 @@ export function SiteDetail() {
     pollRef.current = { interval, timeout }
   }
 
+  async function toggleAcknowledge(incident: Incident) {
+    const path = incident.acknowledged_at ? "unacknowledge" : "acknowledge"
+    await api.post(`/incidents/${incident.id}/${path}`)
+    if (!id) return
+    api.get<Incident[]>(`/incidents?site_id=${id}`).then(setIncidents)
+  }
+
   async function silence() {
     if (!id) return
     const hours = Number(prompt("Silence for how many hours?", "4"))
@@ -226,7 +233,7 @@ export function SiteDetail() {
 
       <section className="rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-2 font-mono text-sm font-medium text-ink">Incident history</h2>
-        <IncidentTable incidents={incidents} />
+        <IncidentTable incidents={incidents} onToggleAcknowledge={toggleAcknowledge} />
       </section>
     </div>
   )

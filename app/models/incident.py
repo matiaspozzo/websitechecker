@@ -41,5 +41,6 @@ class Incident(Base):
     detail_json: Mapped[dict] = mapped_column(JSON, default=dict)
     notified_open_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
     notified_close_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
 
     site: Mapped["Site"] = relationship(back_populates="incidents")

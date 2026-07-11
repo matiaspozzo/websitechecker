@@ -46,6 +46,13 @@ async def open_incident(
     detail = detail or {}
     existing = get_open_incident(db, site.id, check_type)
     if existing is not None:
+        # An acknowledgment ("I know, I've mitigated this") only covers the specific
+        # situation it was made against. If the cause text actually changed -- a
+        # different plugin/CVE now driving the same shared incident type, or a new
+        # detail on the same one -- that's new information the ack didn't cover, so
+        # it needs fresh attention rather than staying silently suppressed.
+        if existing.acknowledged_at is not None and existing.cause != cause:
+            existing.acknowledged_at = None
         existing.cause = cause
         existing.detail_json = {**existing.detail_json, **detail}
         db.commit()
@@ -145,5 +152,28 @@ async def maybe_alert_threshold_crossing(
         await send_incident_open(incident, site)
         incident.notified_open_at = datetime.now(timezone.utc)
         db.commit()
+
+    return incident
+
+
+def acknowledge_incident(db: Session, incident: Incident) -> Incident:
+    """Mark an open incident as acknowledged: e.g. a vulnerable plugin has no fix
+    yet and was deactivated as a mitigation instead. Distinct from `Silence`, which
+    only mutes Telegram sends for a fixed window -- acknowledging clears the
+    incident from dashboard badges immediately and stays in effect indefinitely,
+    but the incident itself remains open and visible in incident history until the
+    underlying check actually clears it. A later cause change (see `open_incident`)
+    auto-clears the ack, since it means something new is going on."""
+    incident.acknowledged_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(incident)
+    return incident
+
+
+def unacknowledge_incident(db: Session, incident: Incident) -> Incident:
+    incident.acknowledged_at = None
+    db.commit()
+    db.refresh(incident)
+    return incident
 
     return incident

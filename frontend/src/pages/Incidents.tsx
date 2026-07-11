@@ -27,13 +27,21 @@ export function Incidents() {
     api.get<Site[]>("/sites").then(setSites)
   }, [])
 
-  useEffect(() => {
+  function refresh() {
     const params = new URLSearchParams()
     if (siteId) params.set("site_id", siteId)
     if (checkType) params.set("check_type", checkType)
     if (openOnly) params.set("open", "true")
     api.get<Incident[]>(`/incidents?${params.toString()}`).then(setIncidents)
-  }, [siteId, checkType, openOnly])
+  }
+
+  useEffect(refresh, [siteId, checkType, openOnly])
+
+  async function toggleAcknowledge(incident: Incident) {
+    const path = incident.acknowledged_at ? "unacknowledge" : "acknowledge"
+    await api.post(`/incidents/${incident.id}/${path}`)
+    refresh()
+  }
 
   const siteNameById = useMemo(() => {
     const map = new Map<number, string>()
@@ -79,7 +87,11 @@ export function Incidents() {
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-4">
-        <IncidentTable incidents={incidents} showSite={(id) => siteNameById.get(id) ?? `#${id}`} />
+        <IncidentTable
+          incidents={incidents}
+          showSite={(id) => siteNameById.get(id) ?? `#${id}`}
+          onToggleAcknowledge={toggleAcknowledge}
+        />
       </div>
     </div>
   )

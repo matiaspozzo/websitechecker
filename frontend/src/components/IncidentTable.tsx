@@ -11,7 +11,15 @@ function formatDuration(openedAt: string, closedAt: string | null): string {
   return `${days}d ${hours % 24}h`
 }
 
-export function IncidentTable({ incidents, showSite }: { incidents: Incident[]; showSite?: (siteId: number) => string }) {
+export function IncidentTable({
+  incidents,
+  showSite,
+  onToggleAcknowledge,
+}: {
+  incidents: Incident[]
+  showSite?: (siteId: number) => string
+  onToggleAcknowledge?: (incident: Incident) => void
+}) {
   if (incidents.length === 0) {
     return <div className="font-mono text-sm text-ink-muted">No incidents.</div>
   }
@@ -27,7 +35,8 @@ export function IncidentTable({ incidents, showSite }: { incidents: Incident[]; 
             <th className="py-2 pr-4 font-normal">Cause</th>
             <th className="py-2 pr-4 font-normal">Opened</th>
             <th className="py-2 pr-4 font-normal">Duration</th>
-            <th className="py-2 font-normal">Status</th>
+            <th className="py-2 pr-4 font-normal">Status</th>
+            {onToggleAcknowledge && <th className="py-2 font-normal"></th>}
           </tr>
         </thead>
         <tbody>
@@ -47,13 +56,27 @@ export function IncidentTable({ incidents, showSite }: { incidents: Incident[]; 
               <td className="max-w-[320px] py-2 pr-4 text-ink">{incident.cause}</td>
               <td className="py-2 pr-4 text-ink-muted">{new Date(incident.opened_at).toLocaleString()}</td>
               <td className="py-2 pr-4 text-ink-muted">{formatDuration(incident.opened_at, incident.closed_at)}</td>
-              <td className="py-2">
+              <td className="py-2 pr-4">
                 {incident.closed_at ? (
                   <span className="text-status-up">closed</span>
+                ) : incident.acknowledged_at ? (
+                  <span className="text-status-warning">acknowledged</span>
                 ) : (
                   <span className="text-status-down">open</span>
                 )}
               </td>
+              {onToggleAcknowledge && (
+                <td className="py-2">
+                  {!incident.closed_at && (
+                    <button
+                      onClick={() => onToggleAcknowledge(incident)}
+                      className="rounded border border-border px-2 py-1 text-xs text-ink-muted"
+                    >
+                      {incident.acknowledged_at ? "unacknowledge" : "acknowledge"}
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

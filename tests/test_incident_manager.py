@@ -89,6 +89,53 @@ async def test_ssl_threshold_crossing_only_notifies_on_new_threshold(db, site):
         assert mock_send.call_count == 2
 
 
+async def test_acknowledge_sets_acknowledged_at(db, site):
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock):
+        incident = await incident_manager.open_incident(db, site, CheckType.wp_cve, Severity.critical, cause="vuln")
+
+    acked = incident_manager.acknowledge_incident(db, incident)
+
+    assert acked.acknowledged_at is not None
+
+
+async def test_unacknowledge_clears_acknowledged_at(db, site):
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock):
+        incident = await incident_manager.open_incident(db, site, CheckType.wp_cve, Severity.critical, cause="vuln")
+    incident_manager.acknowledge_incident(db, incident)
+
+    unacked = incident_manager.unacknowledge_incident(db, incident)
+
+    assert unacked.acknowledged_at is None
+
+
+async def test_refresh_with_same_cause_keeps_acknowledgment(db, site):
+    # Deactivated plugin, same CVE list reported again on the next daily check --
+    # nothing new happened, the ack should still hold.
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock):
+        incident = await incident_manager.open_incident(db, site, CheckType.wp_cve, Severity.critical, cause="vuln")
+    incident_manager.acknowledge_incident(db, incident)
+
+    refreshed = await incident_manager.open_incident(db, site, CheckType.wp_cve, Severity.critical, cause="vuln")
+
+    assert refreshed.acknowledged_at is not None
+
+
+async def test_refresh_with_new_cause_clears_acknowledgment(db, site):
+    # A different plugin becomes vulnerable at the same site (wp_cve is shared
+    # across components) -- that's new information the earlier ack didn't cover.
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock):
+        incident = await incident_manager.open_incident(
+            db, site, CheckType.wp_cve, Severity.critical, cause="plugin A vuln"
+        )
+    incident_manager.acknowledge_incident(db, incident)
+
+    refreshed = await incident_manager.open_incident(
+        db, site, CheckType.wp_cve, Severity.critical, cause="plugin B vuln"
+    )
+
+    assert refreshed.acknowledged_at is None
+
+
 async def test_ssl_threshold_closes_when_renewed(db, site):
     with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock):
         await incident_manager.maybe_alert_threshold_crossing(

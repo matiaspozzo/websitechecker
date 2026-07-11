@@ -14,5 +14,6 @@ class IncidentOut(BaseModel):
     severity: Severity
     opened_at: datetime
     closed_at: datetime | None
+    acknowledged_at: datetime | None
     cause: str
     detail_json: dict

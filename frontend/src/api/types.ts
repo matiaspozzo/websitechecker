@@ -48,6 +48,7 @@ export interface Incident {
   severity: Severity
   opened_at: string
   closed_at: string | null
+  acknowledged_at: string | null
   cause: string
   detail_json: Record<string, unknown>
 }

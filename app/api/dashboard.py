@@ -60,17 +60,28 @@ def get_dashboard(db: Session = Depends(get_db)) -> DashboardResponse:
             .first()
         )
 
+        # Acknowledged incidents ("no fix yet, mitigated by deactivating the plugin")
+        # stay open in the DB and in incident history, but shouldn't keep nagging the
+        # dashboard -- that's the whole point of acknowledging one instead of it just
+        # sitting there unresolved forever.
         open_wp_cve = (
             db.query(Incident)
             .filter(
                 Incident.site_id == site.id,
                 Incident.check_type == CheckType.wp_cve,
                 Incident.closed_at.is_(None),
+                Incident.acknowledged_at.is_(None),
             )
             .count()
         )
         open_incidents = (
-            db.query(Incident).filter(Incident.site_id == site.id, Incident.closed_at.is_(None)).count()
+            db.query(Incident)
+            .filter(
+                Incident.site_id == site.id,
+                Incident.closed_at.is_(None),
+                Incident.acknowledged_at.is_(None),
+            )
+            .count()
         )
 
         outdated_plugin_count = 0
