@@ -1,10 +1,36 @@
 import argparse
 import getpass
+import logging
 import sys
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models.user import User
 from app.security import hash_password
+
+logger = logging.getLogger(__name__)
+
+
+def ensure_admin_user_exists() -> None:
+    """If no users exist yet, seed one from ADMIN_USERNAME/ADMIN_PASSWORD in
+    .env -- makes a fresh deployment (Docker especially, where running an
+    interactive `docker compose exec` command is an easy step to miss) usable
+    immediately, matching what .env.example's own comment already implies.
+    Never touches an existing user, so this is a no-op on every restart once
+    real credentials are in place."""
+    db = SessionLocal()
+    try:
+        if db.query(User).count() > 0:
+            return
+        db.add(User(username=settings.admin_username, password_hash=hash_password(settings.admin_password)))
+        db.commit()
+        logger.warning(
+            "No admin user existed yet; created '%s' from ADMIN_USERNAME/ADMIN_PASSWORD in .env. "
+            "Change this password after logging in if it's still the default.",
+            settings.admin_username,
+        )
+    finally:
+        db.close()
 
 
 def create_user(username: str, password: str | None) -> None:

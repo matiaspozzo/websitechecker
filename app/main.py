@@ -12,6 +12,7 @@ from app.api.router import api_router
 from app.checks import runner
 from app.checks.heartbeat import check_startup_downtime
 from app.checks.registry import load_all_checkers
+from app.cli import ensure_admin_user_exists
 from app.database import SessionLocal
 from app.logging_conf import configure_logging
 from app.notifiers.telegram import start_bot, stop_bot
@@ -25,6 +26,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 async def lifespan(app: FastAPI):
     configure_logging()
     load_all_checkers()
+    ensure_admin_user_exists()
 
     session = aiohttp.ClientSession(
         headers={"User-Agent": runner.USER_AGENT}, timeout=aiohttp.ClientTimeout(total=10)
