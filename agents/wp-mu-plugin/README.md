@@ -15,10 +15,13 @@ itself sits behind NAT with no public IP.
    `/* That's all, stop editing! */` line):
 
    ```php
-   define('SITEWATCH_TOKEN', 'www.preventech.com.ar');
+   define('SITEWATCH_TOKEN', 'REPLACE_WITH_A_GENERATED_TOKEN');
    ```
 
-   Generate one with `openssl rand -hex 32` or similar.
+   Generate one with `openssl rand -hex 32` or similar — never commit the
+   real value anywhere in this repo (docs included); it only belongs in each
+   site's own `wp-config.php` and in the panel's "mu-plugin token" field,
+   which is stored in the gitignored SQLite database, not in source control.
 3. In the SiteWatch panel, edit the site and paste the same value into the
    "mu-plugin token" field.
 
