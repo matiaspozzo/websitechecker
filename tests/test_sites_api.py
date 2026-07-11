@@ -83,6 +83,34 @@ def test_silence_site(authed_client):
     assert resp.status_code == 200
 
 
+def test_create_site_trims_whitespace_from_url_and_client_name(authed_client):
+    # Regression: a trailing space in a pasted URL (e.g. "https://example.com ")
+    # broke DNS resolution entirely and the site was reported as permanently
+    # down with no useful diagnostic -- not a code bug, just untrimmed input.
+    payload = {**SITE_PAYLOAD, "url": " https://example.com ", "client_name": " Acme Corp "}
+    with patch("app.scheduler.reload_site"):
+        resp = authed_client.post("/api/sites", json=payload)
+
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["url"] == "https://example.com"
+    assert body["expected_domain"] == "example.com"
+    assert body["client_name"] == "Acme Corp"
+
+
+def test_update_site_trims_whitespace_from_url(authed_client):
+    with patch("app.scheduler.reload_site"):
+        created = authed_client.post("/api/sites", json=SITE_PAYLOAD).json()
+
+    with patch("app.scheduler.reload_site"):
+        resp = authed_client.put(f"/api/sites/{created['id']}", json={"url": " https://trailing-space.example.com "})
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["url"] == "https://trailing-space.example.com"
+    assert body["expected_domain"] == "trailing-space.example.com"
+
+
 def test_check_now_returns_202(authed_client):
     with patch("app.scheduler.reload_site"):
         created = authed_client.post("/api/sites", json=SITE_PAYLOAD).json()
