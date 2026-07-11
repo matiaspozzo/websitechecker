@@ -130,7 +130,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now sitewatch
 ```
 
-### Windows
+### Windows 10/11 (client)
 
 The `deploy/sitewatch.service` systemd unit doesn't apply on Windows — use
 Docker instead, which needs no code or config changes since the container
@@ -159,10 +159,54 @@ itself still runs Linux:
    setup applies — install the Tailscale Windows client on the server the
    same way.
 
-No native (non-Docker) Windows path is documented — running Python/uvicorn
-directly on Windows as a background service is possible (e.g. via
-[NSSM](https://nssm.cc/) or Task Scheduler) but untested against this
-project; Docker Desktop is the supported route.
+### Windows Server (2016/2019/2022)
+
+**Docker Desktop does not work here** — it's a client-OS product, not
+licensed or built for Server editions, and on 2016/2019 there's no WSL2 to
+fall back to either (WSL2 support on Server starts at 2022, and even there
+it's less battle-tested than the client path above). Symptom if you try it
+anyway: Docker Desktop simply won't start.
+
+The reliable path: run a small Linux VM under **Hyper-V** (already a role on
+Windows Server) and deploy exactly the way this project was actually built
+and tested — a real Linux host with Docker on it. No code changes.
+
+1. Download an **Ubuntu Server 24.04 LTS** ISO.
+2. In Hyper-V Manager, confirm you have an **External** virtual switch
+   (Virtual Switch Manager → New → External, bound to the physical NIC) so
+   the VM lands on your real LAN with its own IP, not an isolated one.
+3. New VM → **Generation 2**, 2GB+ RAM (4GB+ better), 20GB+ disk, attach the
+   ISO, connect to that External switch. In VM Settings → Security, keep
+   Secure Boot on but switch the template to **"Microsoft UEFI Certificate
+   Authority"** — the default Windows template won't boot the Ubuntu
+   installer.
+4. Install Ubuntu Server, enabling OpenSSH server when offered so you can
+   manage it remotely afterward instead of through the VM console.
+5. SSH in and install Docker:
+   ```bash
+   curl -fsSL https://get.docker.com | sh
+   sudo usermod -aG docker $USER   # log out/in after this
+   ```
+6. Copy the project onto the VM (`scp`/`rsync` from wherever you're
+   developing, or `git clone` if it's pushed somewhere) and run it:
+   ```bash
+   cd website-checker
+   cp .env.example .env   # or copy over your existing working .env
+   docker compose up -d --build
+   ```
+7. Browse to `http://<vm-ip>:8000` from any device on the LAN (`ip addr`
+   inside the VM to find it). Set `PANEL_BASE_URL` to that address the same
+   way as the other deploy paths.
+8. For reboot survival: set the VM's **Automatic Start Action** (VM Settings)
+   to "Always start this virtual machine automatically" so it comes back
+   after the Windows Server host reboots — `docker-compose.yml`'s
+   `restart: unless-stopped` already handles the container itself once
+   Docker starts inside the VM.
+
+No native (non-Docker, non-VM) Windows path is documented for either
+edition — running Python/uvicorn directly on Windows as a background
+service is possible (e.g. via [NSSM](https://nssm.cc/) or Task Scheduler)
+but untested against this project.
 
 ## Development
 
