@@ -15,7 +15,7 @@ itself sits behind NAT with no public IP.
    `/* That's all, stop editing! */` line):
 
    ```php
-   define('SITEWATCH_TOKEN', 'REDACTED_MU_PLUGIN_TOKEN');
+   define('SITEWATCH_TOKEN', 'www.preventech.com.ar');
    ```
 
    Generate one with `openssl rand -hex 32` or similar.
