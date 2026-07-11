@@ -117,8 +117,13 @@ cp .env.example .env   # edit it
 docker compose up -d --build
 ```
 
-Data (SQLite DB + logs) persists in `./data`, mounted as a volume. Migrations
-run automatically on container start.
+Data (SQLite DB + logs) persists in `./data`, mounted as a volume — rebuilding
+the image (`docker compose up -d --build` after a `git pull`) never touches
+it. Migrations run automatically on container start, and before they run the
+entrypoint copies `sitewatch.db` into `./data/backups/` (timestamped, last 30
+kept), so every restart leaves a restorable snapshot. To roll back: stop the
+container, copy the desired file from `data/backups/` over `data/sitewatch.db`,
+start it again.
 
 ### systemd (no Docker, Linux)
 

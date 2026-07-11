@@ -10,6 +10,7 @@ import type {
 } from "../api/types"
 import { IncidentTable } from "../components/IncidentTable"
 import { LatencyChart } from "../components/LatencyChart"
+import { Spinner } from "../components/Spinner"
 
 // Checks retry with 5s/15s/30s backoff before giving up (uptime, then content
 // does its own separate fetch+retry too), so a single check-now can legitimately
@@ -27,6 +28,7 @@ export function SiteDetail() {
   const [audits, setAudits] = useState<DependencyAuditSummary[]>([])
   const [range, setRange] = useState<"7d" | "30d">("7d")
   const [message, setMessage] = useState<string | null>(null)
+  const [isChecking, setIsChecking] = useState(false)
   const pollRef = useRef<{ interval: ReturnType<typeof setInterval>; timeout: ReturnType<typeof setTimeout> } | null>(null)
 
   function load() {
@@ -59,6 +61,7 @@ export function SiteDetail() {
       clearTimeout(pollRef.current.timeout)
     }
 
+    setIsChecking(true)
     setMessage("Check started — this can take up to ~100s on a down site (retry/backoff before giving up)…")
     await api.post(`/sites/${id}/check-now`)
 
@@ -66,6 +69,7 @@ export function SiteDetail() {
     const timeout = setTimeout(() => {
       clearInterval(interval)
       pollRef.current = null
+      setIsChecking(false)
       setMessage(null)
       load()
     }, POLL_DURATION_MS)
@@ -94,8 +98,13 @@ export function SiteDetail() {
           </a>
         </div>
         <div className="flex gap-2">
-          <button onClick={checkNow} className="rounded bg-accent px-3 py-1.5 font-mono text-xs font-medium text-bg">
-            check now
+          <button
+            onClick={checkNow}
+            disabled={isChecking}
+            className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 font-mono text-xs font-medium text-bg disabled:opacity-70"
+          >
+            {isChecking && <Spinner />}
+            {isChecking ? "checking…" : "check now"}
           </button>
           <button onClick={silence} className="rounded border border-border px-3 py-1.5 font-mono text-xs text-ink-muted">
             silence
@@ -109,7 +118,11 @@ export function SiteDetail() {
         </div>
       </div>
 
-      {message && <p className="mb-3 font-mono text-xs text-ink-muted">{message}</p>}
+      {message && (
+        <p className="mb-3 flex items-center gap-2 font-mono text-xs text-ink-muted">
+          <Spinner /> {message}
+        </p>
+      )}
 
       <section className="mb-6 rounded-lg border border-border bg-surface p-4">
         <div className="mb-2 flex items-center justify-between">

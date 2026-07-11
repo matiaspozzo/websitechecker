@@ -11,6 +11,8 @@ venv/
 # Env / secrets
 .env
 data/*.db
+data/*.md
+data/backups/*
 data/last_alive.txt
 data/logs/*
 data/ssh_keys/*
