@@ -124,12 +124,26 @@ class WordPressChecker:
         # Note: all plugin/theme/core CVEs share the single wp_cve incident type per site,
         # so if multiple components are simultaneously vulnerable only the most recently
         # checked one is reflected in the open incident's cause/detail.
+        #
+        # A component is only "confirmed clean" if we actually got an answer back from
+        # WPScan (an empty vulnerabilities list). If a lookup couldn't be performed at all
+        # (no API key, daily budget exhausted, request failed) that's `None`, not a clean
+        # bill of health -- we must not let a budget miss silently auto-close a real open
+        # incident. Only close wp_cve at the end if every outdated component we looked at
+        # this run came back confirmed-clean.
+        any_cve_found = False
+        any_uncertain = False
+
         for plugin in snapshot.plugins_json:
             available = plugin.get("available")
             if not available or available == plugin.get("installed"):
                 continue
             vulns = await wpscan_client.get_plugin_vulnerabilities(db, http, plugin.get("slug", ""))
+            if vulns is None:
+                any_uncertain = True
+                continue
             if vulns:
+                any_cve_found = True
                 titles = [v.get("title", "unknown vulnerability") for v in vulns]
                 await incident_manager.open_incident(
                     db,
@@ -148,7 +162,11 @@ class WordPressChecker:
             if not available or available == theme.get("installed"):
                 continue
             vulns = await wpscan_client.get_theme_vulnerabilities(db, http, theme.get("slug", ""))
+            if vulns is None:
+                any_uncertain = True
+                continue
             if vulns:
+                any_cve_found = True
                 titles = [v.get("title", "unknown vulnerability") for v in vulns]
                 await incident_manager.open_incident(
                     db,
@@ -164,7 +182,10 @@ class WordPressChecker:
 
         if report.get("core_update_available") and snapshot.core_version:
             core_vulns = await wpscan_client.get_core_vulnerabilities(db, http, snapshot.core_version)
-            if core_vulns:
+            if core_vulns is None:
+                any_uncertain = True
+            elif core_vulns:
+                any_cve_found = True
                 titles = [v.get("title", "unknown vulnerability") for v in core_vulns]
                 await incident_manager.open_incident(
                     db,
@@ -177,6 +198,9 @@ class WordPressChecker:
                     ),
                     detail={"vulnerabilities": core_vulns},
                 )
+
+        if not any_cve_found and not any_uncertain:
+            await incident_manager.close_incident(db, site, CheckType.wp_cve)
 
         return CheckOutcome(success=True, check_type=self.check_type)
 

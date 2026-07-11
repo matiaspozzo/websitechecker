@@ -70,22 +70,26 @@ async def _get_cached_or_fetch(db: Session, http: aiohttp.ClientSession, cache_k
     return data
 
 
-async def get_plugin_vulnerabilities(db: Session, http: aiohttp.ClientSession, slug: str) -> list[dict]:
+async def get_plugin_vulnerabilities(db: Session, http: aiohttp.ClientSession, slug: str) -> list[dict] | None:
+    """Returns None (not []) when the lookup couldn't be performed at all -- no API key,
+    daily budget exhausted, or the request failed -- so callers can tell "confirmed no
+    known CVEs" apart from "we simply didn't check today" instead of treating both the
+    same way (which would incorrectly auto-close a real open incident)."""
     data = await _get_cached_or_fetch(db, http, f"plugin:{slug}", f"{WPSCAN_BASE}/plugins/{slug}")
-    if not data or slug not in data:
-        return []
-    return data[slug].get("vulnerabilities", [])
+    if data is None:
+        return None
+    return data.get(slug, {}).get("vulnerabilities", [])
 
 
-async def get_theme_vulnerabilities(db: Session, http: aiohttp.ClientSession, slug: str) -> list[dict]:
+async def get_theme_vulnerabilities(db: Session, http: aiohttp.ClientSession, slug: str) -> list[dict] | None:
     data = await _get_cached_or_fetch(db, http, f"theme:{slug}", f"{WPSCAN_BASE}/themes/{slug}")
-    if not data or slug not in data:
-        return []
-    return data[slug].get("vulnerabilities", [])
+    if data is None:
+        return None
+    return data.get(slug, {}).get("vulnerabilities", [])
 
 
-async def get_core_vulnerabilities(db: Session, http: aiohttp.ClientSession, version: str) -> list[dict]:
+async def get_core_vulnerabilities(db: Session, http: aiohttp.ClientSession, version: str) -> list[dict] | None:
     data = await _get_cached_or_fetch(db, http, f"core:{version}", f"{WPSCAN_BASE}/wordpresses/{version}")
-    if not data or version not in data:
-        return []
-    return data[version].get("vulnerabilities", [])
+    if data is None:
+        return None
+    return data.get(version, {}).get("vulnerabilities", [])

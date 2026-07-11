@@ -57,7 +57,10 @@ async def test_exhausted_budget_skips_request_without_raising(db):
 
     result = await wpscan_client.get_plugin_vulnerabilities(db, http=None, slug="some-plugin")
 
-    assert result == []
+    # None (not []) -- callers must be able to tell "budget exhausted, didn't check"
+    # apart from "checked, confirmed no vulnerabilities" so they don't wrongly
+    # auto-close a real open incident just because today's budget ran out.
+    assert result is None
 
 
 async def test_cache_hit_does_not_consume_budget(db):

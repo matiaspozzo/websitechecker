@@ -189,6 +189,71 @@ async def test_unrelated_500_falls_back_to_generic_reason(db, site):
     assert "HTTP 500" in incident.cause
 
 
+async def test_cve_incident_closes_once_plugin_is_patched(db, site):
+    # Regression: wp_cve incidents were only ever opened, never closed -- once a
+    # plugin's CVE alert fired it stayed "open" forever even after the site
+    # updated past the patched version, since nothing re-evaluated it.
+    checker = WordPressChecker()
+    outdated_report = {
+        "core_version": "6.5",
+        "core_update_available": None,
+        "php_version": "8.2",
+        "plugins": [{"slug": "wpvivid-backuprestore", "installed": "0.9.129", "available": "0.9.130"}],
+        "themes": [],
+        "admin_usernames": ["admin"],
+    }
+    vulns = [{"title": "WPvivid Backup & Migration < 0.9.130 - Admin+ Arbitrary Directory Deletion"}]
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock), patch(
+        "app.checks.wpscan_client.get_plugin_vulnerabilities", new_callable=AsyncMock, return_value=vulns
+    ):
+        await checker.run(site, db, _FakeSession(_FakeResponse(200, outdated_report)))
+
+    open_incident = (
+        db.query(Incident).filter(Incident.site_id == site.id, Incident.check_type == CheckType.wp_cve).first()
+    )
+    assert open_incident is not None
+    assert open_incident.closed_at is None
+
+    patched_report = {**outdated_report, "plugins": [{"slug": "wpvivid-backuprestore", "installed": "0.9.130", "available": "0.9.130"}]}
+    with patch("app.notifiers.telegram.send_incident_close", new_callable=AsyncMock) as mock_close:
+        await checker.run(site, db, _FakeSession(_FakeResponse(200, patched_report)))
+
+    db.refresh(open_incident)
+    assert open_incident.closed_at is not None
+    mock_close.assert_called_once()
+
+
+async def test_cve_incident_stays_open_when_wpscan_lookup_is_uncertain(db, site):
+    # If WPScan can't be queried this run (budget exhausted, API down), that must
+    # NOT be treated as "confirmed clean" -- a real open incident should stay open
+    # rather than silently auto-closing just because we didn't get to check today.
+    checker = WordPressChecker()
+    outdated_report = {
+        "core_version": "6.5",
+        "core_update_available": None,
+        "php_version": "8.2",
+        "plugins": [{"slug": "wpvivid-backuprestore", "installed": "0.9.129", "available": "0.9.130"}],
+        "themes": [],
+        "admin_usernames": ["admin"],
+    }
+    vulns = [{"title": "some CVE"}]
+    with patch("app.notifiers.telegram.send_incident_open", new_callable=AsyncMock), patch(
+        "app.checks.wpscan_client.get_plugin_vulnerabilities", new_callable=AsyncMock, return_value=vulns
+    ):
+        await checker.run(site, db, _FakeSession(_FakeResponse(200, outdated_report)))
+
+    open_incident = (
+        db.query(Incident).filter(Incident.site_id == site.id, Incident.check_type == CheckType.wp_cve).first()
+    )
+    assert open_incident is not None
+
+    with patch("app.checks.wpscan_client.get_plugin_vulnerabilities", new_callable=AsyncMock, return_value=None):
+        await checker.run(site, db, _FakeSession(_FakeResponse(200, outdated_report)))
+
+    db.refresh(open_incident)
+    assert open_incident.closed_at is None
+
+
 async def test_missing_token_is_not_an_incident(db, site):
     site.mu_plugin_token = None
     db.commit()
