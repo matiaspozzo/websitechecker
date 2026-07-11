@@ -120,7 +120,7 @@ docker compose up -d --build
 Data (SQLite DB + logs) persists in `./data`, mounted as a volume. Migrations
 run automatically on container start.
 
-### systemd (no Docker)
+### systemd (no Docker, Linux)
 
 See [`deploy/sitewatch.service`](deploy/sitewatch.service). Copy it to
 `/etc/systemd/system/`, adjust the paths, then:
@@ -129,6 +129,40 @@ See [`deploy/sitewatch.service`](deploy/sitewatch.service). Copy it to
 sudo systemctl daemon-reload
 sudo systemctl enable --now sitewatch
 ```
+
+### Windows
+
+The `deploy/sitewatch.service` systemd unit doesn't apply on Windows — use
+Docker instead, which needs no code or config changes since the container
+itself still runs Linux:
+
+1. Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+   (it sets up the WSL2 backend automatically on Windows 10/11).
+2. Copy this project folder onto the Windows machine (git clone, network
+   share, USB, whatever's convenient), and copy your working `.env` over too
+   if you already have one configured elsewhere.
+3. In **Docker Desktop → Settings → General**, enable "Start Docker Desktop
+   when you log in" so it survives a reboot the same way the systemd unit
+   would on Linux.
+4. Open PowerShell in the project folder and run the same commands as the
+   [Docker section above](#docker):
+   ```powershell
+   copy .env.example .env   # or use your existing .env
+   docker compose up -d --build
+   ```
+5. Find the Windows machine's LAN IP with `ipconfig` (look for "IPv4
+   Address" under your active adapter) and browse to
+   `http://<that-ip>:8000` from any device on the network. Set
+   `PANEL_BASE_URL` in `.env` (and Settings → panel base URL in the panel)
+   to that same address so Telegram alert links resolve correctly.
+6. For access from outside the network, the same [Tailscale](#remote-access-to-the-panel)
+   setup applies — install the Tailscale Windows client on the server the
+   same way.
+
+No native (non-Docker) Windows path is documented — running Python/uvicorn
+directly on Windows as a background service is possible (e.g. via
+[NSSM](https://nssm.cc/) or Task Scheduler) but untested against this
+project; Docker Desktop is the supported route.
 
 ## Development
 
