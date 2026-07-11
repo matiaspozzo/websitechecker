@@ -1,4 +1,4 @@
-export type SiteType = "wordpress" | "laravel" | "nextjs"
+export type SiteType = "wordpress" | "laravel" | "nextjs" | "other"
 export type MonitoringMode = "full" | "basic"
 
 export interface Site {

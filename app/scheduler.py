@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler(timezone=settings.tz)
 
 # Checks that run on the site's own configured interval (fast, frequent).
-INTERVAL_CHECK_TYPES = {"uptime", "content"}
+INTERVAL_CHECK_TYPES = {"uptime", "content", "health"}
 
 # Checks that run once/day, staggered per-site to avoid a thundering herd.
 DAILY_CHECK_TYPES = {

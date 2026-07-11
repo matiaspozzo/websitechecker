@@ -22,10 +22,14 @@
   --color-status-critical: #ef4444;
 
   /* Categorical, one per stack -- deliberately not green/red/amber so a stack
-     color is never mistaken for a status (up/critical/warning) at a glance. */
+     color is never mistaken for a status (up/critical/warning) at a glance.
+     "other" gets a neutral slate rather than a fifth vivid hue, matching the
+     usual convention that a catch-all bucket reads as "unclassified", not
+     as its own strong category. */
   --color-stack-wordpress: #3987e5;
   --color-stack-laravel: #9085e9;
   --color-stack-nextjs: #d55181;
+  --color-stack-other: #94a3b8;
 }
 
 html,

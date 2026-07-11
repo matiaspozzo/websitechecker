@@ -82,6 +82,36 @@ def test_remove_site_jobs_clears_everything(site):
     assert scheduler.scheduler.get_jobs() == []
 
 
+def test_health_check_is_scheduled_on_the_site_interval(site):
+    # Regression: "health" was registered as a checker but never added to
+    # either INTERVAL_CHECK_TYPES or DAILY_CHECK_TYPES, so it only ever ran
+    # via manual check-now or the startup sweep, never on a recurring schedule.
+    scheduler.add_site_jobs(site)
+
+    health_job = scheduler.scheduler.get_job(f"site:{site.id}:health")
+    assert health_job is not None
+    assert isinstance(health_job.trigger, IntervalTrigger)
+    assert health_job.trigger.interval.total_seconds() == 120
+
+
+def test_other_site_type_gets_health_and_deps_jobs_not_wp(db):
+    site = Site(
+        name="Custom Site",
+        url="https://custom.example.com",
+        expected_domain="custom.example.com",
+        type=SiteType.other,
+    )
+    db.add(site)
+    db.commit()
+    db.refresh(site)
+
+    scheduler.add_site_jobs(site)
+
+    assert scheduler.scheduler.get_job(f"site:{site.id}:health") is not None
+    assert scheduler.scheduler.get_job(f"site:{site.id}:deps") is not None
+    assert scheduler.scheduler.get_job(f"site:{site.id}:wp") is None
+
+
 def test_wordpress_site_gets_wp_job_not_deps(db):
     site = Site(
         name="WP Site", url="https://wp.example.com", expected_domain="wp.example.com",

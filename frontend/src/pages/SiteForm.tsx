@@ -131,6 +131,7 @@ export function SiteForm() {
               <option value="wordpress">WordPress</option>
               <option value="laravel">Laravel</option>
               <option value="nextjs">Next.js</option>
+              <option value="other">Other</option>
             </select>
           </div>
           <div>
@@ -152,7 +153,7 @@ export function SiteForm() {
             value={form.monitoring_mode}
             onChange={(e) => set("monitoring_mode", e.target.value as MonitoringMode)}
           >
-            <option value="full">Full (uptime, content, SSL/domain, {form.type === "wordpress" ? "WP inventory" : "deps audit"}, blacklist)</option>
+            <option value="full">Full (uptime, content, SSL/domain, {form.type === "wordpress" ? "WP inventory" : "health/deps audit"}, blacklist)</option>
             <option value="basic">Basic (uptime + SSL/domain expiry only)</option>
           </select>
         </div>

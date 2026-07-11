@@ -13,6 +13,7 @@ class SiteType(str, enum.Enum):
     wordpress = "wordpress"
     laravel = "laravel"
     nextjs = "nextjs"
+    other = "other"
 
 
 class MonitoringMode(str, enum.Enum):

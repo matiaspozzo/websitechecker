@@ -52,13 +52,16 @@ class HealthChecker:
         return CheckOutcome(success=ok, check_type=self.check_type, error_message=error)
 
 
-register(HealthChecker(), applies_to={SiteType.laravel, SiteType.nextjs})
+register(HealthChecker(), applies_to={SiteType.laravel, SiteType.nextjs, SiteType.other})
 
 
 class DependencyAuditChecker:
     check_type = "deps"
 
     async def run(self, site: Site, db: Session, http: aiohttp.ClientSession) -> CheckOutcome:
+        # "other"-type sites default to npm along with nextjs, since there's no
+        # third audit tool to pick from -- if a SiteType.other site is actually
+        # composer-based, its dependency audit results won't be meaningful.
         tool = "composer" if site.type == SiteType.laravel else "npm"
 
         if site.ssh_host and site.ssh_user and site.ssh_key_path and site.ssh_project_path:
@@ -138,4 +141,4 @@ class DependencyAuditChecker:
         return count, (f"{count} advisories" if count else "no vulnerabilities")
 
 
-register(DependencyAuditChecker(), applies_to={SiteType.laravel, SiteType.nextjs})
+register(DependencyAuditChecker(), applies_to={SiteType.laravel, SiteType.nextjs, SiteType.other})

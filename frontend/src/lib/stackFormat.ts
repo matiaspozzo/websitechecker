@@ -1,18 +1,20 @@
 import type { CSSProperties } from "react"
 import type { SiteType } from "../api/types"
 
-export const STACK_ORDER: SiteType[] = ["wordpress", "laravel", "nextjs"]
+export const STACK_ORDER: SiteType[] = ["wordpress", "laravel", "nextjs", "other"]
 
 export const STACK_LABELS: Record<SiteType, string> = {
   wordpress: "WordPress",
   laravel: "Laravel",
   nextjs: "Next.js",
+  other: "Other",
 }
 
 const STACK_COLOR_VAR: Record<SiteType, string> = {
   wordpress: "var(--color-stack-wordpress)",
   laravel: "var(--color-stack-laravel)",
   nextjs: "var(--color-stack-nextjs)",
+  other: "var(--color-stack-other)",
 }
 
 export function stackColor(type: SiteType): string {
